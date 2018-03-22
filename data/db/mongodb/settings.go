@@ -32,7 +32,7 @@ func init() {
 		MgoCNameKeyQlf: "qlf",
 	}
 
-	err := json.DecodeJsonFromFile(MgoSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFile(MgoSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
