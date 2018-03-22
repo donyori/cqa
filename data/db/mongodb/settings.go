@@ -23,6 +23,15 @@ var (
 )
 
 func init() {
+	// Default values:
+	GlobalSettings.Url = "127.0.0.1"
+	GlobalSettings.DbName = "cqa"
+	GlobalSettings.CNames = map[string]string{
+		MgoCNameKeyQa:  "qa",
+		MgoCNameKeyTag: "tag",
+		MgoCNameKeyQlf: "qlf",
+	}
+
 	err := json.DecodeJsonFromFile(MgoSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)

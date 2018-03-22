@@ -8,7 +8,7 @@ import (
 type QuestionAccessor interface {
 	Get(params interface{}) (question *dtype.Question, err error)
 	GetById(id interface{}) (question *dtype.Question, err error)
-	Scan(bufferSize int, params interface{}) (out <-chan *dtype.Question, res <-chan error, quit chan<- int, err error)
+	Scan(bufferSize int, params interface{}) (out <-chan *dtype.Question, res <-chan error, quit chan<- struct{}, err error)
 }
 
 func NewQuestionAccessor() (accessor QuestionAccessor, err error) {

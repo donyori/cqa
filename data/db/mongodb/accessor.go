@@ -47,7 +47,7 @@ func (mqa *MgoQuestionAccessor) GetById(id interface{}) (
 }
 
 func (mqa *MgoQuestionAccessor) Scan(bufferSize int, params interface{}) (
-	out <-chan *dtype.Question, res <-chan error, quit chan<- int, err error) {
+	out <-chan *dtype.Question, res <-chan error, quit chan<- struct{}, err error) {
 	var qp *QueryParams
 	if params != nil {
 		var ok bool
@@ -78,7 +78,7 @@ func (mqa *MgoQuestionAccessor) Scan(bufferSize int, params interface{}) (
 		outChan = make(chan *dtype.Question)
 	}
 	resChan := make(chan error, 1)
-	quitChan := make(chan int, 1)
+	quitChan := make(chan struct{}, 1)
 	go func() {
 		defer sess.Close()
 		iter := q.Iter()

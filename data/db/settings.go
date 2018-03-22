@@ -23,7 +23,10 @@ var (
 )
 
 func init() {
-	err := json.DecodeJsonFromFile(DbSettingsFilename, &GlobalSettings)
+	// Default values:
+	GlobalSettings.DbType = DbTypeMongoDB
+
+	err := json.DecodeJsonFromFileIfExist(DbSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
