@@ -11,7 +11,7 @@ type MongoDbSettings struct {
 }
 
 const (
-	MgoCNameKeyQa  string = "qa"
+	MgoCNameKeyQ   string = "q"
 	MgoCNameKeyTag string = "tag"
 	MgoCNameKeyQlf string = "qlf"
 
@@ -24,15 +24,15 @@ var (
 
 func init() {
 	// Default values:
-	GlobalSettings.Url = "127.0.0.1"
+	GlobalSettings.Url = "127.0.0.1:27017"
 	GlobalSettings.DbName = "cqa"
 	GlobalSettings.CNames = map[string]string{
-		MgoCNameKeyQa:  "qa",
-		MgoCNameKeyTag: "tag",
-		MgoCNameKeyQlf: "qlf",
+		MgoCNameKeyQ:   "questions.v1",
+		MgoCNameKeyTag: "tags.v1",
+		MgoCNameKeyQlf: "question_linguistic_features.v1",
 	}
 
-	_, err := json.DecodeJsonFromFile(MgoSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFileIfExist(MgoSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

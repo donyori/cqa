@@ -6,7 +6,13 @@ import (
 	"github.com/donyori/cqa/data/dtype"
 )
 
-type MgoQuestionAccessor struct{}
+type MgoQuestionAccessor struct {
+	MgoConnector
+}
+
+func NewMgoQuestionAccessor(settings *MongoDbSettings) *MgoQuestionAccessor {
+	return &MgoQuestionAccessor{MgoConnector: *NewMgoConnector(settings)}
+}
 
 func (mqa *MgoQuestionAccessor) Get(params interface{}) (
 	question *dtype.Question, err error) {
@@ -17,15 +23,13 @@ func (mqa *MgoQuestionAccessor) Get(params interface{}) (
 	if !ok {
 		return nil, ErrNotQueryParams
 	}
-	url := GlobalSettings.Url
-	dbName := GlobalSettings.DbName
-	cName := GlobalSettings.CNames[MgoCNameKeyQa]
-	sess, err := mgo.Dial(url)
-	if err != nil {
-		return nil, err
+	mqa.RLock()
+	defer mqa.RUnlock()
+	if !mqa.isConnectedWithoutLock() {
+		return nil, ErrNotConnected
 	}
-	defer sess.Close()
-	c := sess.DB(dbName).C(cName)
+	settings := mqa.getSettings()
+	c := mqa.Session.DB(settings.DbName).C(settings.CNames[MgoCNameKeyQ])
 	qp.Limit = 1
 	q := qp.MakeQuery(c)
 	res := new(dtype.Question)
@@ -56,21 +60,11 @@ func (mqa *MgoQuestionAccessor) Scan(bufferSize int, params interface{}) (
 			return nil, nil, nil, ErrNotQueryParams
 		}
 	}
-	url := GlobalSettings.Url
-	dbName := GlobalSettings.DbName
-	cName := GlobalSettings.CNames[MgoCNameKeyQa]
-	sess, err := mgo.Dial(url)
-	if err != nil {
-		return nil, nil, nil, err
+	mqa.RLock()
+	defer mqa.RUnlock()
+	if !mqa.isConnectedWithoutLock() {
+		return nil, nil, nil, ErrNotConnected
 	}
-	needsCloseSession := true
-	defer func() {
-		if needsCloseSession {
-			sess.Close()
-		}
-	}()
-	c := sess.DB(dbName).C(cName)
-	q := qp.MakeQuery(c)
 	var outChan chan *dtype.Question
 	if bufferSize > 0 {
 		outChan = make(chan *dtype.Question, bufferSize)
@@ -80,7 +74,11 @@ func (mqa *MgoQuestionAccessor) Scan(bufferSize int, params interface{}) (
 	resChan := make(chan error, 1)
 	quitChan := make(chan struct{}, 1)
 	go func() {
-		defer sess.Close()
+		mqa.RLock()
+		defer mqa.RUnlock()
+		settings := mqa.getSettings()
+		c := mqa.Session.DB(settings.DbName).C(settings.CNames[MgoCNameKeyQ])
+		q := qp.MakeQuery(c)
 		iter := q.Iter()
 		defer iter.Close() // Ignore error.
 		defer close(resChan)
@@ -99,6 +97,20 @@ func (mqa *MgoQuestionAccessor) Scan(bufferSize int, params interface{}) (
 		iterErr := iter.Err()
 		resChan <- iterErr
 	}()
-	needsCloseSession = false
 	return outChan, resChan, quitChan, nil
+}
+
+func (mqa *MgoQuestionAccessor) Save(question *dtype.Question) (isNew bool, err error) {
+	mqa.RLock()
+	defer mqa.RUnlock()
+	if !mqa.isConnectedWithoutLock() {
+		return false, ErrNotConnected
+	}
+	settings := mqa.getSettings()
+	c := mqa.Session.DB(settings.DbName).C(settings.CNames[MgoCNameKeyQ])
+	info, err := c.UpsertId(question.QuestionID, question)
+	if err != nil {
+		return false, err
+	}
+	return info.Updated == 0, nil
 }
