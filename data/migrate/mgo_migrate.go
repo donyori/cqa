@@ -53,10 +53,10 @@ func MigrateQuestions(goroutineNumber int) {
 
 func CopyComment(src *odtype.StackExchangeAPIComment) *dtype.Comment {
 	newC := &dtype.Comment{
-		CommentID:    src.CommentID,
+		CommentId:    src.CommentID,
 		BodyHTML:     src.BodyHTML,
 		BodyMarkdown: src.BodyMarkdown,
-		PostID:       src.PostID,
+		PostId:       src.PostID,
 		PostType:     src.PostType,
 		Link:         src.Link,
 		Score:        src.Score,
@@ -66,11 +66,11 @@ func CopyComment(src *odtype.StackExchangeAPIComment) *dtype.Comment {
 
 func CopyAnswer(src *odtype.StackExchangeAPIAnswer) *dtype.Answer {
 	newA := &dtype.Answer{
-		AnswerID:     src.AnswerID,
+		AnswerId:     src.AnswerID,
 		BodyHTML:     src.BodyHTML,
 		BodyMarkdown: src.BodyMarkdown,
 		IsAccepted:   src.IsAccepted,
-		QuestionID:   src.QuestionID,
+		QuestionId:   src.QuestionID,
 		Tags:         src.Tags,
 		Link:         src.Link,
 		Score:        src.Score,
@@ -84,12 +84,12 @@ func CopyAnswer(src *odtype.StackExchangeAPIAnswer) *dtype.Answer {
 
 func CopyMgoQuestion(src *odtype.MgoQuestion) *dtype.Question {
 	newQ := &dtype.Question{
-		QuestionID:       src.ID,
+		QuestionId:       src.ID,
 		Title:            src.Title,
 		BodyHTML:         src.BodyHTML,
 		BodyMarkdown:     src.BodyMarkdown,
 		IsAnswered:       src.IsAnswered,
-		AcceptedAnswerID: src.AcceptedAnswerID,
+		AcceptedAnswerId: src.AcceptedAnswerID,
 		Tags:             src.Tags,
 		Link:             src.Link,
 		Score:            src.Score,

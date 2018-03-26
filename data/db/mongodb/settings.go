@@ -14,6 +14,7 @@ const (
 	MgoCNameKeyQ   string = "q"
 	MgoCNameKeyTag string = "tag"
 	MgoCNameKeyQlf string = "qlf"
+	MgoCNameKeyQv  string = "qv"
 
 	MgoSettingsFilename string = "settings/mgo.json"
 )
@@ -30,6 +31,7 @@ func init() {
 		MgoCNameKeyQ:   "questions.v1",
 		MgoCNameKeyTag: "tags.v1",
 		MgoCNameKeyQlf: "question_linguistic_features.v1",
+		MgoCNameKeyQv:  "question_vector.v1",
 	}
 
 	_, err := json.DecodeJsonFromFileIfExist(MgoSettingsFilename, &GlobalSettings)

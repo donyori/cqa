@@ -50,3 +50,18 @@ func (params *QueryParams) MakeQuery(c *mgo.Collection) *mgo.Query {
 	}
 	return q
 }
+
+func ConvertToQueryParams(params interface{}) (queryParams *QueryParams, err error) {
+	if params == nil {
+		return nil, nil
+	}
+	pqp, ok := params.(*QueryParams)
+	if ok {
+		return pqp, nil
+	}
+	qp, ok := params.(QueryParams)
+	if ok {
+		return &qp, nil
+	}
+	return nil, ErrNotQueryParams
+}
