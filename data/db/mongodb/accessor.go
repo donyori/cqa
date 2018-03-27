@@ -3,7 +3,7 @@ package mongodb
 import (
 	"gopkg.in/mgo.v2"
 
-	"github.com/donyori/cqa/data/dtype"
+	"github.com/donyori/cqa/data/model"
 )
 
 type MgoQuestionAccessor struct {
@@ -19,7 +19,7 @@ func NewMgoQuestionAccessor(settings *MongoDbSettings) *MgoQuestionAccessor {
 }
 
 func (mqa *MgoQuestionAccessor) Get(params interface{}) (
-	question *dtype.Question, err error) {
+	question *model.Question, err error) {
 	qp, err := ConvertToQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (mqa *MgoQuestionAccessor) Get(params interface{}) (
 	c := mqa.Session.DB(settings.DbName).C(settings.CNames[MgoCNameKeyQ])
 	qp.Limit = 1
 	q := qp.MakeQuery(c)
-	res := new(dtype.Question)
+	res := new(model.Question)
 	err = q.One(res)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -48,14 +48,14 @@ func (mqa *MgoQuestionAccessor) Get(params interface{}) (
 }
 
 func (mqa *MgoQuestionAccessor) GetById(id interface{}) (
-	question *dtype.Question, err error) {
+	question *model.Question, err error) {
 	params := NewQueryParams()
 	params.Id = id
 	return mqa.Get(params)
 }
 
 func (mqa *MgoQuestionAccessor) Scan(params interface{}, bufferSize int) (
-	out <-chan *dtype.Question, res <-chan error, quit chan<- struct{}, err error) {
+	out <-chan *model.Question, res <-chan error, quit chan<- struct{}, err error) {
 	qp, err := ConvertToQueryParams(params)
 	if err != nil {
 		return nil, nil, nil, err
@@ -65,11 +65,11 @@ func (mqa *MgoQuestionAccessor) Scan(params interface{}, bufferSize int) (
 	if !mqa.isConnectedWithoutLock() {
 		return nil, nil, nil, ErrNotConnected
 	}
-	var outChan chan *dtype.Question
+	var outChan chan *model.Question
 	if bufferSize > 0 {
-		outChan = make(chan *dtype.Question, bufferSize)
+		outChan = make(chan *model.Question, bufferSize)
 	} else {
-		outChan = make(chan *dtype.Question)
+		outChan = make(chan *model.Question)
 	}
 	resChan := make(chan error, 1)
 	quitChan := make(chan struct{}, 1)
@@ -83,7 +83,7 @@ func (mqa *MgoQuestionAccessor) Scan(params interface{}, bufferSize int) (
 		defer iter.Close() // Ignore error.
 		defer close(resChan)
 		defer close(outChan)
-		result := new(dtype.Question)
+		result := new(model.Question)
 		isQuit := false
 		for !isQuit && iter.Next(result) {
 			select {
@@ -91,7 +91,7 @@ func (mqa *MgoQuestionAccessor) Scan(params interface{}, bufferSize int) (
 				isQuit = true
 			default:
 				outChan <- result
-				result = new(dtype.Question) // Make a new struct each time.
+				result = new(model.Question) // Make a new struct each time.
 			}
 		}
 		iterErr := iter.Err()
@@ -100,7 +100,7 @@ func (mqa *MgoQuestionAccessor) Scan(params interface{}, bufferSize int) (
 	return outChan, resChan, quitChan, nil
 }
 
-func (mqa *MgoQuestionAccessor) Save(question *dtype.Question) (isNew bool, err error) {
+func (mqa *MgoQuestionAccessor) Save(question *model.Question) (isNew bool, err error) {
 	mqa.RLock()
 	defer mqa.RUnlock()
 	if !mqa.isConnectedWithoutLock() {
@@ -120,7 +120,7 @@ func NewMgoQuestionVectorAccessor(settings *MongoDbSettings) *MgoQuestionVectorA
 }
 
 func (mqva *MgoQuestionVectorAccessor) Get(params interface{}) (
-	questionVector *dtype.QuestionVector, err error) {
+	questionVector *model.QuestionVector, err error) {
 	qp, err := ConvertToQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (mqva *MgoQuestionVectorAccessor) Get(params interface{}) (
 	c := mqva.Session.DB(settings.DbName).C(settings.CNames[MgoCNameKeyQv])
 	qp.Limit = 1
 	q := qp.MakeQuery(c)
-	res := new(dtype.QuestionVector)
+	res := new(model.QuestionVector)
 	err = q.One(res)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -149,14 +149,14 @@ func (mqva *MgoQuestionVectorAccessor) Get(params interface{}) (
 }
 
 func (mqva *MgoQuestionVectorAccessor) GetById(id interface{}) (
-	questionVector *dtype.QuestionVector, err error) {
+	questionVector *model.QuestionVector, err error) {
 	params := NewQueryParams()
 	params.Id = id
 	return mqva.Get(params)
 }
 
 func (mqva *MgoQuestionVectorAccessor) Scan(params interface{}, bufferSize int) (
-	out <-chan *dtype.QuestionVector, res <-chan error, quit chan<- struct{}, err error) {
+	out <-chan *model.QuestionVector, res <-chan error, quit chan<- struct{}, err error) {
 	qp, err := ConvertToQueryParams(params)
 	if err != nil {
 		return nil, nil, nil, err
@@ -166,11 +166,11 @@ func (mqva *MgoQuestionVectorAccessor) Scan(params interface{}, bufferSize int) 
 	if mqva.isConnectedWithoutLock() {
 		return nil, nil, nil, ErrNotConnected
 	}
-	var outChan chan *dtype.QuestionVector
+	var outChan chan *model.QuestionVector
 	if bufferSize > 0 {
-		outChan = make(chan *dtype.QuestionVector, bufferSize)
+		outChan = make(chan *model.QuestionVector, bufferSize)
 	} else {
-		outChan = make(chan *dtype.QuestionVector)
+		outChan = make(chan *model.QuestionVector)
 	}
 	resChan := make(chan error, 1)
 	quitChan := make(chan struct{}, 1)
@@ -184,7 +184,7 @@ func (mqva *MgoQuestionVectorAccessor) Scan(params interface{}, bufferSize int) 
 		defer iter.Close() // Ignore error.
 		defer close(resChan)
 		defer close(outChan)
-		result := new(dtype.QuestionVector)
+		result := new(model.QuestionVector)
 		isQuit := false
 		for !isQuit && iter.Next(result) {
 			select {
@@ -192,7 +192,7 @@ func (mqva *MgoQuestionVectorAccessor) Scan(params interface{}, bufferSize int) 
 				isQuit = true
 			default:
 				outChan <- result
-				result = new(dtype.QuestionVector) // Make a new struct each time.
+				result = new(model.QuestionVector) // Make a new struct each time.
 			}
 		}
 		iterErr := iter.Err()
@@ -201,7 +201,7 @@ func (mqva *MgoQuestionVectorAccessor) Scan(params interface{}, bufferSize int) 
 	return outChan, resChan, quitChan, nil
 }
 
-func (mqva *MgoQuestionVectorAccessor) Save(questionVector *dtype.QuestionVector) (
+func (mqva *MgoQuestionVectorAccessor) Save(questionVector *model.QuestionVector) (
 	isNew bool, err error) {
 	mqva.RLock()
 	defer mqva.RUnlock()

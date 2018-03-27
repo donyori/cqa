@@ -3,7 +3,7 @@ package nlp
 import (
 	"encoding/json"
 
-	"github.com/donyori/cqa/data/dtype"
+	"github.com/donyori/cqa/data/model"
 )
 
 type EmbeddingResponse struct {
@@ -13,7 +13,7 @@ type EmbeddingResponse struct {
 	} `json:"data"`
 }
 
-func Embedding(doc string) (vector *dtype.Vector32, err error) {
+func Embedding(doc string) (vector *model.Vector32, err error) {
 	resp, err := GetNlpGetClient().R().
 		SetQueryParam("q", doc).
 		Get(GlobalSettings.EmbeddingPath)
@@ -25,7 +25,7 @@ func Embedding(doc string) (vector *dtype.Vector32, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := &dtype.Vector32{
+	ret := &model.Vector32{
 		Data:   res.Data.Vector,
 		L2Norm: res.Data.VectorL2Norm,
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/donyori/cqa/data/db"
 	"github.com/donyori/cqa/data/db/mongodb"
-	"github.com/donyori/cqa/data/dtype"
+	"github.com/donyori/cqa/data/model"
 	"github.com/donyori/cqa/nlp"
 )
 
@@ -90,7 +90,7 @@ func QuestionEmbedding() error {
 				if e != nil {
 					return
 				}
-				qv := &dtype.QuestionVector{
+				qv := &model.QuestionVector{
 					QuestionId:  question.QuestionId,
 					TitleVector: vector,
 				}

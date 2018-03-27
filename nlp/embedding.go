@@ -2,10 +2,10 @@ package nlp
 
 import (
 	api "github.com/donyori/cqa/api/restful/nlp"
-	"github.com/donyori/cqa/data/dtype"
+	"github.com/donyori/cqa/data/model"
 )
 
-func Embedding(doc string) (vector *dtype.Vector32, err error) {
+func Embedding(doc string) (vector *model.Vector32, err error) {
 	switch GlobalSettings.EmbeddingMethod {
 	case NlpMethodUseRestfulApi:
 		return api.Embedding(doc)
