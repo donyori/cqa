@@ -6,28 +6,46 @@ import (
 	"github.com/donyori/cqa/common/json"
 )
 
+type NlpSource int8
+
 type NlpSettings struct {
-	EmbeddingMethod string `json:"embedding_method"`
+	EmbeddingSource NlpSource `json:"embedding_source"`
 }
 
 const (
-	NlpMethodUseRestfulApi string = "use_restful_api"
-
-	NlpSettingsFilename string = "settings/nlp.json"
+	NlpSourceRestfulApi NlpSource = iota
 )
+
+const NlpSettingsFilename string = "settings/nlp.json"
 
 var (
 	GlobalSettings NlpSettings
 
-	ErrUnknownNlpMethod error = errors.New("unknown method for NLP")
+	ErrInvalidNlpSource error = errors.New("NLP source is invalid")
+
+	nlpSourceStrings = [...]string{
+		"RESTful API",
+	}
 )
 
 func init() {
 	// Default values:
-	GlobalSettings.EmbeddingMethod = NlpMethodUseRestfulApi
+	GlobalSettings.EmbeddingSource = NlpSourceRestfulApi
 
-	_, err := json.DecodeJsonFromFileIfExist(NlpSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFileIfExist(
+		NlpSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (ns NlpSource) String() string {
+	if !ns.IsValid() {
+		return "Unknown"
+	}
+	return nlpSourceStrings[ns]
+}
+
+func (ns NlpSource) IsValid() bool {
+	return ns == NlpSourceRestfulApi
 }

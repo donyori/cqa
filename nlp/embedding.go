@@ -6,10 +6,11 @@ import (
 )
 
 func Embedding(doc string) (vector *model.Vector32, err error) {
-	switch GlobalSettings.EmbeddingMethod {
-	case NlpMethodUseRestfulApi:
+	nlpSource := GlobalSettings.EmbeddingSource
+	switch nlpSource {
+	case NlpSourceRestfulApi:
 		return api.Embedding(doc)
 	default:
-		return nil, ErrUnknownNlpMethod
+		return nil, ErrInvalidNlpSource
 	}
 }

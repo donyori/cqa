@@ -19,6 +19,7 @@ func CheckResponse(resp *resty.Response) error {
 	return nil
 }
 
-func CheckResponseOnAfterResponse(client *resty.Client, resp *resty.Response) error {
+func CheckResponseOnAfterResponse(client *resty.Client,
+	resp *resty.Response) error {
 	return CheckResponse(resp)
 }

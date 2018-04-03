@@ -1,20 +1,17 @@
 package db
 
 import (
+	"github.com/donyori/cqa/data/db/generic"
 	"github.com/donyori/cqa/data/db/mongodb"
 )
 
-type Maintainer interface {
-	Connector
-
-	EnsureIndexes(isBackground bool) error
-}
-
-func NewMaintainer() (mantainer Maintainer, err error) {
-	switch GlobalSettings.DbType {
+func NewMaintainer(session generic.Session) (
+	mantainer generic.Maintainer, err error) {
+	dbType := GlobalSettings.Type
+	switch dbType {
 	case DbTypeMongoDB:
-		return mongodb.NewMgoMaintainer(nil), nil
+		return mongodb.NewMgoMaintainer(session)
 	default:
-		return nil, ErrUnknownDbType
+		return nil, ErrInvalidDbType
 	}
 }

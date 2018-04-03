@@ -25,9 +25,8 @@ func Embedding(doc string) (vector *model.Vector32, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := &model.Vector32{
-		Data:   res.Data.Vector,
-		L2Norm: res.Data.VectorL2Norm,
-	}
+	ret := model.NewVector32()
+	ret.Data = res.Data.Vector
+	ret.L2Norm = res.Data.VectorL2Norm
 	return ret, nil
 }

@@ -9,41 +9,48 @@ import (
 
 	"github.com/donyori/cqa/data/db"
 	"github.com/donyori/cqa/data/db/mongodb"
+	"github.com/donyori/cqa/data/db/wrapper"
 	"github.com/donyori/cqa/data/model"
 	"github.com/donyori/cqa/nlp"
 )
 
 func QuestionEmbedding() error {
-	nGoroutines := GlobalSettings.GoroutineNumber
+	goroutineNumber := GlobalSettings.GoroutineNumber
 	minMs := GlobalSettings.MinMillisecond
 	log.Println("Start question embedding. goroutine number:",
-		nGoroutines)
+		goroutineNumber)
 	var err error
 	defer func() {
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}()
-	qa, err := db.NewQuestionAccessor()
+	session, err := db.NewSession()
 	if err != nil {
 		return err
 	}
-	err = qa.Connect()
+	defer session.Close()
+	log.Println("*** Succeed to connect to database.")
+	accessor, err := db.NewAccessor(session)
 	if err != nil {
 		return err
 	}
-	defer qa.Close()
-	log.Println("*** Succeed to connect database.")
+	qa, err := wrapper.NewQuestionAccessor(accessor)
+	if err != nil {
+		return err
+	}
 	params := mongodb.NewQueryParams()
 	params.Selector = bson.M{"_id": 1, "title": 1}
-	out, res, quit, err := qa.Scan(params, nGoroutines)
+	quitC := make(chan struct{}, 1)
+	defer close(quitC)
+	outC, resC, err := qa.Scan(params, goroutineNumber, quitC)
 	if err != nil {
 		return err
 	}
 	log.Println("*** Start embedding.")
 	var wg sync.WaitGroup
-	wg.Add(nGoroutines)
-	for i := 0; i < nGoroutines; i++ {
+	wg.Add(goroutineNumber)
+	for i := 0; i < goroutineNumber; i++ {
 		go func(number int) {
 			defer wg.Done()
 			var e error
@@ -52,15 +59,19 @@ func QuestionEmbedding() error {
 					log.Fatalf("*** Error occurs on %v: %v\n", number, e)
 				}
 			}()
-			qva, e := db.NewQuestionVectorAccessor()
+			sess, e := db.NewSession()
 			if e != nil {
 				return
 			}
-			e = qva.Connect()
+			defer sess.Close()
+			acc, e := db.NewAccessor(sess)
 			if e != nil {
 				return
 			}
-			defer qva.Close()
+			qva, e := wrapper.NewQuestionVectorAccessor(acc)
+			if e != nil {
+				return
+			}
 			var timer *time.Timer
 			var duration time.Duration
 			needDrainC := false
@@ -75,9 +86,10 @@ func QuestionEmbedding() error {
 				}()
 			}
 			count := 0
-			for question := range out {
-				if count > 0 && count%100 == 0 {
-					log.Printf("*** Goroutine %v has embedded %v questions.", number, count)
+			for question := range outC {
+				if count%20 == 0 {
+					log.Printf("*** Goroutine %v has embedded %v questions.",
+						number, count)
 				}
 				if timer != nil {
 					if !timer.Stop() && needDrainC {
@@ -90,11 +102,10 @@ func QuestionEmbedding() error {
 				if e != nil {
 					return
 				}
-				qv := &model.QuestionVector{
-					QuestionId:  question.QuestionId,
-					TitleVector: vector,
-				}
-				_, e = qva.Save(qv)
+				qv := model.NewQuestionVector()
+				qv.QuestionId = question.QuestionId
+				qv.TitleVector = vector
+				_, e = qva.SaveById(qv.QuestionId, qv)
 				if e != nil {
 					return
 				}
@@ -107,9 +118,8 @@ func QuestionEmbedding() error {
 		}(i)
 	}
 	wg.Wait()
-	quit <- struct{}{}
-	close(quit)
-	err = <-res
+	quitC <- struct{}{}
+	err = <-resC
 	if err != nil {
 		return err
 	}

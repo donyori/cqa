@@ -48,7 +48,8 @@ func DecodeJsonFromFile(filename string, out ...interface{}) error {
 	return nil
 }
 
-func DecodeJsonFromFileIfExist(filename string, out ...interface{}) (hasRead bool, err error) {
+func DecodeJsonFromFileIfExist(filename string, out ...interface{}) (
+	hasRead bool, err error) {
 	if _, err = os.Stat(filename); os.IsNotExist(err) {
 		// File does NOT exist.
 		return false, nil

@@ -11,6 +11,10 @@ type Vector32 struct {
 	L2Norm float32   `json:"l2_norm" bson:"l2_norm"`
 }
 
+func NewVector32() *Vector32 {
+	return new(Vector32)
+}
+
 func (v *Vector32) DotProduct(vector *Vector32) float32 {
 	if v == nil || vector == nil || len(v.Data) == 0 || len(vector.Data) == 0 {
 		return 0.0

@@ -15,9 +15,7 @@ type QueryParams struct {
 	SortFields []string
 }
 
-var (
-	ErrNotQueryParams error = errors.New("parameter is NOT QueryParams")
-)
+var ErrNotQueryParams error = errors.New("parameter is NOT QueryParams")
 
 func NewQueryParams() *QueryParams {
 	return new(QueryParams)
@@ -51,7 +49,8 @@ func (params *QueryParams) MakeQuery(c *mgo.Collection) *mgo.Query {
 	return q
 }
 
-func ConvertToQueryParams(params interface{}) (queryParams *QueryParams, err error) {
+func ConvertToQueryParams(params interface{}) (
+	queryParams *QueryParams, err error) {
 	if params == nil {
 		return nil, nil
 	}

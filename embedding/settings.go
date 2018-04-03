@@ -11,20 +11,17 @@ type EmbeddingSettings struct {
 	MinMillisecond  int `json:"min_millisecond"`
 }
 
-const (
-	EmbeddingSettingsFilename string = "settings/embedding.json"
-)
+const EmbeddingSettingsFilename string = "settings/embedding.json"
 
-var (
-	GlobalSettings EmbeddingSettings
-)
+var GlobalSettings EmbeddingSettings
 
 func init() {
 	// Default values:
 	GlobalSettings.GoroutineNumber = runtime.NumCPU() * 16
 	GlobalSettings.MinMillisecond = 250
 
-	_, err := json.DecodeJsonFromFileIfExist(EmbeddingSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFileIfExist(
+		EmbeddingSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

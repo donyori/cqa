@@ -6,28 +6,46 @@ import (
 	"github.com/donyori/cqa/common/json"
 )
 
+type DbType int8
+
 type DbSettings struct {
-	DbType string `json:"db_type"`
+	Type DbType `json:"type"`
 }
 
 const (
-	DbTypeMongoDB string = "MongoDB"
-
-	DbSettingsFilename string = "settings/db.json"
+	DbTypeMongoDB DbType = iota
 )
+
+const DbSettingsFilename string = "settings/db.json"
 
 var (
 	GlobalSettings DbSettings
 
-	ErrUnknownDbType error = errors.New("db_type is unknown")
+	ErrInvalidDbType error = errors.New("DB type is invalid")
+
+	dbTypeStrings = [...]string{
+		"MongoDB",
+	}
 )
 
 func init() {
 	// Default values:
-	GlobalSettings.DbType = DbTypeMongoDB
+	GlobalSettings.Type = DbTypeMongoDB
 
-	_, err := json.DecodeJsonFromFileIfExist(DbSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFileIfExist(
+		DbSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (dt DbType) String() string {
+	if !dt.IsValid() {
+		return "Unknown"
+	}
+	return dbTypeStrings[dt]
+}
+
+func (dt DbType) IsValid() bool {
+	return dt == DbTypeMongoDB
 }

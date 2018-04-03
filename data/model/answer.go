@@ -1,7 +1,7 @@
 package model
 
 type Answer struct {
-	AnswerId     int64      `json:"answer_id" bson:"_id"`
+	AnswerId     int64      `json:"answer_id" bson:"_id" cqadm:"id"`
 	BodyHTML     string     `json:"body" bson:"body"`
 	BodyMarkdown string     `json:"body_markdown" bson:"body_markdown"`
 	IsAccepted   bool       `json:"is_accepted" bson:"is_accepted"`
@@ -10,4 +10,8 @@ type Answer struct {
 	Tags         []string   `json:"tags" bson:"tags"`
 	Link         string     `json:"link" bson:"link"`
 	Score        int32      `json:"score" bson:"score"`
+}
+
+func NewAnswer() *Answer {
+	return new(Answer)
 }

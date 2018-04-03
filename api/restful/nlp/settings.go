@@ -9,20 +9,17 @@ type NlpApiSettings struct {
 	EmbeddingPath string `json:"embedding_path"`
 }
 
-const (
-	NlpApiSettingsFilename string = "settings/nlp_api.json"
-)
+const NlpApiSettingsFilename string = "settings/nlp_api.json"
 
-var (
-	GlobalSettings NlpApiSettings
-)
+var GlobalSettings NlpApiSettings
 
 func init() {
 	// Default values:
 	GlobalSettings.HostUrl = "http://localhost:5000"
 	GlobalSettings.EmbeddingPath = "/embedding"
 
-	_, err := json.DecodeJsonFromFileIfExist(NlpApiSettingsFilename, &GlobalSettings)
+	_, err := json.DecodeJsonFromFileIfExist(
+		NlpApiSettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
