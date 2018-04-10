@@ -10,7 +10,7 @@ func NewMaintainer(session generic.Session) (
 	dbType := GlobalSettings.Type
 	switch dbType {
 	case DbTypeMongoDB:
-		return mongodb.NewMgoMaintainer(session)
+		return mongodb.NewMaintainer(session)
 	default:
 		return nil, ErrInvalidDbType
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/donyori/cqa/data/db/id"
 )
 
-type MongoDbSettings struct {
+type Settings struct {
 	Url    string                     `json:"url"`
 	DbName string                     `json:"db_name"`
 	CNames map[id.CollectionId]string `json:"collection_names"`
@@ -15,10 +15,10 @@ type MongoDbSettings struct {
 	PoolLimit int `json:"pool_limit"`
 }
 
-const MgoSettingsFilename string = "settings/mgo.json"
+const SettingsFilename string = "settings/mgo.json"
 
 var (
-	GlobalSettings MongoDbSettings
+	GlobalSettings Settings
 
 	ErrCollectionNameNotSet error = errors.New("collection name is not set")
 )
@@ -37,7 +37,7 @@ func init() {
 	GlobalSettings.PoolLimit = 1024
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		MgoSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

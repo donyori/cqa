@@ -10,19 +10,19 @@ import (
 	"github.com/donyori/cqa/data/db/id"
 )
 
-type MgoSession struct {
+type Session struct {
 	sess     *mgo.Session
-	settings *MongoDbSettings
+	settings *Settings
 	// "url" field is important to ensure the URL cannot be changed
-	// after NewNewMgoSession().
+	// after NewSession().
 	url string
 
 	acquireCounter int
 	cond           *sync.Cond
 }
 
-type WithMgoSession struct {
-	sess *MgoSession
+type WithSession struct {
+	sess *Session
 	lock sync.RWMutex
 }
 
@@ -35,8 +35,9 @@ var (
 	ErrPoolLimitExceeded    error = errors.New("pool limit exceeded")
 	ErrInvalidSession       error = errors.New("sess is invalid")
 	ErrSessionPoolCleanedUp error = errors.New("session pool is cleaned up")
-	ErrNilWithSession       error = errors.New("WithMgoSession is nil")
-	ErrNotMgoSession        error = errors.New("session is not a MgoSession")
+	ErrNilWithSession       error = errors.New("WithSession is nil")
+	ErrNotSession           error = errors.New(
+		"session is not a MongoDB session")
 
 	sessionSeedMap map[string]*sessionSeed
 	mapLock        sync.Mutex
@@ -46,7 +47,7 @@ func init() {
 	sessionSeedMap = make(map[string]*sessionSeed)
 }
 
-func acquireSession(url string, settings *MongoDbSettings) (
+func acquireSession(url string, settings *Settings) (
 	sess *mgo.Session, err error) {
 	if settings == nil {
 		settings = &GlobalSettings
@@ -126,7 +127,7 @@ func GetCollection(cid id.CollectionId, nativeSession interface{},
 	if !ok {
 		return nil, ErrInvalidSession
 	}
-	mgoSettings, ok := settings.(*MongoDbSettings)
+	mgoSettings, ok := settings.(*Settings)
 	if !ok {
 		return nil, ErrInvalidSession
 	}
@@ -138,7 +139,7 @@ func GetCollection(cid id.CollectionId, nativeSession interface{},
 	return c, nil
 }
 
-func NewMgoSession(settings *MongoDbSettings) (sess *MgoSession, err error) {
+func NewSession(settings *Settings) (sess *Session, err error) {
 	if settings == nil {
 		settings = &GlobalSettings
 	}
@@ -147,7 +148,7 @@ func NewMgoSession(settings *MongoDbSettings) (sess *MgoSession, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sess = &MgoSession{
+	sess = &Session{
 		sess:     nativeSess,
 		settings: settings,
 		url:      url,
@@ -156,7 +157,7 @@ func NewMgoSession(settings *MongoDbSettings) (sess *MgoSession, err error) {
 	return sess, nil
 }
 
-func (ms *MgoSession) IsValid() bool {
+func (ms *Session) IsValid() bool {
 	if ms == nil || ms.cond == nil {
 		return false
 	}
@@ -165,7 +166,7 @@ func (ms *MgoSession) IsValid() bool {
 	return ms.isValid()
 }
 
-func (ms *MgoSession) GetUrl() (url string, err error) {
+func (ms *Session) GetUrl() (url string, err error) {
 	if ms == nil || ms.cond == nil {
 		return "", ErrInvalidSession
 	}
@@ -177,7 +178,7 @@ func (ms *MgoSession) GetUrl() (url string, err error) {
 	return ms.url, nil
 }
 
-func (ms *MgoSession) Acquire() (nativeSession interface{},
+func (ms *Session) Acquire() (nativeSession interface{},
 	settings interface{}, err error) {
 	if ms == nil || ms.cond == nil {
 		return nil, nil, ErrInvalidSession
@@ -191,7 +192,7 @@ func (ms *MgoSession) Acquire() (nativeSession interface{},
 	return ms.sess, ms.settings, nil
 }
 
-func (ms *MgoSession) Release() {
+func (ms *Session) Release() {
 	if ms == nil || ms.cond == nil {
 		return
 	}
@@ -204,7 +205,7 @@ func (ms *MgoSession) Release() {
 	ms.cond.Broadcast()
 }
 
-func (ms *MgoSession) Close() {
+func (ms *Session) Close() {
 	if ms == nil || ms.cond == nil {
 		return
 	}
@@ -223,11 +224,11 @@ func (ms *MgoSession) Close() {
 	}
 }
 
-func (ms *MgoSession) isValid() bool {
+func (ms *Session) isValid() bool {
 	return ms.sess != nil && ms.sess.Ping() == nil
 }
 
-func (wms *WithMgoSession) GetSession() generic.Session {
+func (wms *WithSession) GetSession() generic.Session {
 	if wms == nil {
 		return nil
 	}
@@ -236,13 +237,13 @@ func (wms *WithMgoSession) GetSession() generic.Session {
 	return wms.sess
 }
 
-func (wms *WithMgoSession) SetSession(session generic.Session) error {
+func (wms *WithSession) SetSession(session generic.Session) error {
 	if wms == nil {
 		return ErrNilWithSession
 	}
-	sess, ok := session.(*MgoSession)
+	sess, ok := session.(*Session)
 	if !ok {
-		return ErrNotMgoSession
+		return ErrNotSession
 	}
 	wms.lock.Lock()
 	defer wms.lock.Unlock()
@@ -250,7 +251,7 @@ func (wms *WithMgoSession) SetSession(session generic.Session) error {
 	return nil
 }
 
-func (wms *WithMgoSession) aquireSessionAndCollection(cid id.CollectionId) (
+func (wms *WithSession) aquireSessionAndCollection(cid id.CollectionId) (
 	session generic.Session, c *mgo.Collection, err error) {
 	session = wms.GetSession()
 	if session == nil {

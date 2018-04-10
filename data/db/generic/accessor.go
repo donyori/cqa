@@ -14,7 +14,7 @@ type Accessor interface {
 		res interface{}, err error)
 	GetById(cid dbid.CollectionId, id interface{}, maker helper.Maker) (
 		res interface{}, err error)
-	Scan(cid dbid.CollectionId, params interface{}, bufferSize int,
+	Scan(cid dbid.CollectionId, params interface{}, bufferSize uint32,
 		quitC <-chan struct{}, maker helper.Maker) (
 		outC <-chan interface{}, resC <-chan error, err error)
 	Save(cid dbid.CollectionId, selector interface{}, model interface{}) (

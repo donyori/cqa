@@ -17,14 +17,18 @@ import (
 func QuestionEmbedding() error {
 	goroutineNumber := GlobalSettings.GoroutineNumber
 	minMs := GlobalSettings.MinMillisecond
-	log.Println("Start question embedding. goroutine number:",
-		goroutineNumber)
 	var err error
 	defer func() {
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}()
+	if goroutineNumber <= 0 {
+		err = ErrNonPositiveGoroutineNumber
+		return err
+	}
+	log.Println("Start question embedding. goroutine number:",
+		goroutineNumber)
 	session, err := db.NewSession()
 	if err != nil {
 		return err
@@ -43,7 +47,7 @@ func QuestionEmbedding() error {
 	params.Selector = bson.M{"_id": 1, "title": 1}
 	quitC := make(chan struct{}, 1)
 	defer close(quitC)
-	outC, resC, err := qa.Scan(params, goroutineNumber, quitC)
+	outC, resC, err := qa.Scan(params, uint32(goroutineNumber), quitC)
 	if err != nil {
 		return err
 	}

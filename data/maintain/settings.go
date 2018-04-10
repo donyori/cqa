@@ -8,17 +8,13 @@ type EnsureIndexesSettings struct {
 	IsBackground bool `json:"is_background"`
 }
 
-type MaintainSettings struct {
+type Settings struct {
 	EnsureIndexes *EnsureIndexesSettings `json:"ensure_indexes"`
 }
 
-const (
-	MaintainSettingsFilename string = "settings/maintain.json"
-)
+const SettingsFilename string = "settings/maintain.json"
 
-var (
-	GlobalSettings MaintainSettings
-)
+var GlobalSettings Settings
 
 func init() {
 	// Default values:
@@ -27,7 +23,7 @@ func init() {
 	}
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		MaintainSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

@@ -29,13 +29,13 @@ var (
 	}
 )
 
+func (cid CollectionId) IsValid() bool {
+	return cid >= QuestionCollection && cid <= QuestionVectorCollection
+}
+
 func (cid CollectionId) String() string {
 	if !cid.IsValid() {
 		return "Unknown"
 	}
 	return collectionIdStrings[cid]
-}
-
-func (cid CollectionId) IsValid() bool {
-	return cid >= QuestionCollection && cid <= QuestionVectorCollection
 }

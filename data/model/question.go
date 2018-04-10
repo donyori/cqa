@@ -1,12 +1,12 @@
 package model
 
 type Question struct {
-	QuestionId       int64  `json:"question_id" bson:"_id" cqadm:"id"`
+	QuestionId       Id     `json:"question_id" bson:"_id" cqadm:"id"`
 	Title            string `json:"title" bson:"title"`
 	BodyHTML         string `json:"body" bson:"body"`
 	BodyMarkdown     string `json:"body_markdown" bson:"body_markdown"`
 	IsAnswered       bool   `json:"is_answered" bson:"is_answered"`
-	AcceptedAnswerId int64  `json:"accepted_answer_id" 
+	AcceptedAnswerId Id     `json:"accepted_answer_id" 
 	                         bson:"accepted_answer_id"`
 	Answers   []*Answer  `json:"answers" bson:"answers"`
 	Comments  []*Comment `json:"comments" bson:"comments"`

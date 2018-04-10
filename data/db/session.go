@@ -9,7 +9,7 @@ func NewSession() (session generic.Session, err error) {
 	dbType := GlobalSettings.Type
 	switch dbType {
 	case DbTypeMongoDB:
-		return mongodb.NewMgoSession(nil)
+		return mongodb.NewSession(nil)
 	default:
 		return nil, ErrInvalidDbType
 	}

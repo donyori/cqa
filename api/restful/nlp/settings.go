@@ -4,14 +4,14 @@ import (
 	"github.com/donyori/cqa/common/json"
 )
 
-type NlpApiSettings struct {
+type Settings struct {
 	HostUrl       string `json:"host_url"`
 	EmbeddingPath string `json:"embedding_path"`
 }
 
-const NlpApiSettingsFilename string = "settings/nlp_api.json"
+const SettingsFilename string = "settings/nlp_api.json"
 
-var GlobalSettings NlpApiSettings
+var GlobalSettings Settings
 
 func init() {
 	// Default values:
@@ -19,7 +19,7 @@ func init() {
 	GlobalSettings.EmbeddingPath = "/embedding"
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		NlpApiSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

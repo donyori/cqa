@@ -9,15 +9,15 @@ import (
 	"github.com/donyori/cqa/data/db/id"
 )
 
-type MgoMaintainer struct {
-	WithMgoSession
+type Maintainer struct {
+	WithSession
 }
 
-var ErrNilMaintainer error = errors.New("MgoMaintainer is nil")
+var ErrNilMaintainer error = errors.New("MongoDB maintainer is nil")
 
-func NewMgoMaintainer(session generic.Session) (
-	maintainer *MgoMaintainer, err error) {
-	maintainer = new(MgoMaintainer)
+func NewMaintainer(session generic.Session) (
+	maintainer *Maintainer, err error) {
+	maintainer = new(Maintainer)
 	if session != nil {
 		err = maintainer.SetSession(session)
 		if err != nil {
@@ -27,7 +27,7 @@ func NewMgoMaintainer(session generic.Session) (
 	return maintainer, nil
 }
 
-func (mm *MgoMaintainer) EnsureIndexes(cid id.CollectionId,
+func (mm *Maintainer) EnsureIndexes(cid id.CollectionId,
 	isBackground bool) error {
 	if mm == nil {
 		return ErrNilMaintainer
@@ -81,7 +81,7 @@ func (mm *MgoMaintainer) EnsureIndexes(cid id.CollectionId,
 	return nil
 }
 
-func (mm *MgoMaintainer) EnsureDataTypes(cid id.CollectionId) error {
+func (mm *Maintainer) EnsureDataTypes(cid id.CollectionId) error {
 	if mm == nil {
 		return ErrNilMaintainer
 	}
@@ -89,7 +89,7 @@ func (mm *MgoMaintainer) EnsureDataTypes(cid id.CollectionId) error {
 		return nil
 	}
 	session := mm.GetSession()
-	accessor, err := NewMgoAccessor(session)
+	accessor, err := NewAccessor(session)
 	if err != nil {
 		return err
 	}

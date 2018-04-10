@@ -15,13 +15,15 @@ var (
 )
 
 func GetNlpGetClient() *resty.Client {
-	initNlpGetClientOnce.Do(initNlpGetClient)
+	initNlpGetClient()
 	return nlpGetClient
 }
 
 func initNlpGetClient() {
-	nlpGetClient = resty.New().
-		SetHostURL(GlobalSettings.HostUrl).
-		SetHeader("Accept", "application/json").
-		OnAfterResponse(restful.CheckResponseOnAfterResponse)
+	initNlpGetClientOnce.Do(func() {
+		nlpGetClient = resty.New().
+			SetHostURL(GlobalSettings.HostUrl).
+			SetHeader("Accept", "application/json").
+			OnAfterResponse(restful.CheckResponseOnAfterResponse)
+	})
 }

@@ -66,7 +66,7 @@ func (qa *QuestionAccessor) GetById(id interface{}) (
 	return question, nil
 }
 
-func (qa *QuestionAccessor) Scan(params interface{}, bufferSize int,
+func (qa *QuestionAccessor) Scan(params interface{}, bufferSize uint32,
 	quitC <-chan struct{}) (outC <-chan *model.Question,
 	resC <-chan error, err error) {
 	if qa == nil {
@@ -83,19 +83,38 @@ func (qa *QuestionAccessor) Scan(params interface{}, bufferSize int,
 	go func() {
 		defer close(resultChannel)
 		defer close(outChannel)
-		defer close(quitChannel)
+		defer func() {
+			if quitChannel != nil {
+				close(quitChannel)
+			}
+		}()
 		var e error
 		isQuit := false
 		for !isQuit {
 			select {
-			case msg := <-quitC:
-				quitChannel <- msg
-			case q := <-out:
+			case msg, ok := <-quitC:
+				if quitChannel == nil {
+					break
+				}
+				if ok {
+					quitChannel <- msg
+				} else {
+					close(quitChannel)
+					quitChannel = nil
+				}
+			case q, ok := <-out:
+				if !ok {
+					e = <-res
+					isQuit = true
+					break
+				}
 				question, ok := q.(*model.Question)
 				if ok {
 					outChannel <- question
 				} else {
-					quitChannel <- struct{}{}
+					if quitChannel != nil {
+						quitChannel <- struct{}{}
+					}
 					e = ErrResultTypeWrong
 					isQuit = true
 				}
@@ -176,7 +195,7 @@ func (qva *QuestionVectorAccessor) GetById(id interface{}) (
 	return question, nil
 }
 
-func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize int,
+func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
 	quitC <-chan struct{}) (outC <-chan *model.QuestionVector,
 	resC <-chan error, err error) {
 	if qva == nil {
@@ -193,19 +212,38 @@ func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize int,
 	go func() {
 		defer close(resultChannel)
 		defer close(outChannel)
-		defer close(quitChannel)
+		defer func() {
+			if quitChannel != nil {
+				close(quitChannel)
+			}
+		}()
 		var e error
 		isQuit := false
 		for !isQuit {
 			select {
-			case msg := <-quitC:
-				quitChannel <- msg
-			case q := <-out:
+			case msg, ok := <-quitC:
+				if quitChannel == nil {
+					break
+				}
+				if ok {
+					quitChannel <- msg
+				} else {
+					close(quitChannel)
+					quitChannel = nil
+				}
+			case q, ok := <-out:
+				if !ok {
+					e = <-res
+					isQuit = true
+					break
+				}
 				question, ok := q.(*model.QuestionVector)
 				if ok {
 					outChannel <- question
 				} else {
-					quitChannel <- struct{}{}
+					if quitChannel != nil {
+						quitChannel <- struct{}{}
+					}
 					e = ErrResultTypeWrong
 					isQuit = true
 				}

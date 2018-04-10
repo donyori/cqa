@@ -13,10 +13,19 @@ var (
 )
 
 func GetId(model interface{}) (id interface{}, err error) {
+	return getIdBase(model, tag.DataModelTagKey, tag.DataModelTagId)
+}
+
+func GetMongoDbId(model interface{}) (id interface{}, err error) {
+	return getIdBase(model, tag.MongoDbTagKey, tag.MongoDbTagId)
+}
+
+func getIdBase(model interface{}, tagKey string, tagValue string) (
+	id interface{}, err error) {
 	if model == nil {
 		return nil, ErrNilModel
 	}
-	id, ok := tag.GetDataModelFieldValueByTag(model, tag.DataModelTagId)
+	id, ok := tag.GetDataModelFieldValueByTag(model, tagKey, tagValue)
 	if !ok {
 		return nil, ErrNoSuchField
 	}

@@ -16,11 +16,11 @@ func TestGetId(t *testing.T) {
 		Output interface{}
 		Error  error
 	}{
-		{question, int64(123), nil},
-		{pQ, int64(123), nil},
-		{ppQ, int64(123), nil},
+		{question, (model.Id)(123), nil},
+		{pQ, (model.Id)(123), nil},
+		{ppQ, (model.Id)(123), nil},
 		{nil, nil, ErrNilModel},
-		{model.NewVector32(), nil, ErrUnknownModelType},
+		{model.NewVector32(), nil, ErrNoSuchField},
 	}
 	for _, c := range cases {
 		out, err := GetId(c.Input)

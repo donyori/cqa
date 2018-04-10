@@ -8,7 +8,7 @@ import (
 
 type NlpSource int8
 
-type NlpSettings struct {
+type Settings struct {
 	EmbeddingSource NlpSource `json:"embedding_source"`
 }
 
@@ -16,10 +16,10 @@ const (
 	NlpSourceRestfulApi NlpSource = iota
 )
 
-const NlpSettingsFilename string = "settings/nlp.json"
+const SettingsFilename string = "settings/nlp.json"
 
 var (
-	GlobalSettings NlpSettings
+	GlobalSettings Settings
 
 	ErrInvalidNlpSource error = errors.New("NLP source is invalid")
 
@@ -33,10 +33,14 @@ func init() {
 	GlobalSettings.EmbeddingSource = NlpSourceRestfulApi
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		NlpSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (ns NlpSource) IsValid() bool {
+	return ns == NlpSourceRestfulApi
 }
 
 func (ns NlpSource) String() string {
@@ -44,8 +48,4 @@ func (ns NlpSource) String() string {
 		return "Unknown"
 	}
 	return nlpSourceStrings[ns]
-}
-
-func (ns NlpSource) IsValid() bool {
-	return ns == NlpSourceRestfulApi
 }

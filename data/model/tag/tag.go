@@ -7,9 +7,13 @@ import (
 const (
 	DataModelTagKey string = "cqadm"
 	DataModelTagId  string = "id"
+
+	MongoDbTagKey string = "bson"
+	MongoDbTagId  string = "_id"
 )
 
-func GetDataModelFieldByTag(model interface{}, tag string) (
+func GetDataModelFieldByTag(model interface{},
+	tagKey string, tagValue string) (
 	field *reflect.Value, ok bool) {
 	if model == nil {
 		return nil, false
@@ -30,11 +34,11 @@ func GetDataModelFieldByTag(model interface{}, tag string) (
 	t := v.Type()
 	numField := t.NumField()
 	var fieldType reflect.StructField
-	var tagValue string
+	var tag string
 	var hasTag bool
 	for i := 0; i < numField; i++ {
 		fieldType = t.Field(i)
-		tagValue, hasTag = fieldType.Tag.Lookup(DataModelTagKey)
+		tag, hasTag = fieldType.Tag.Lookup(tagKey)
 		if hasTag && tagValue == tag {
 			fieldValue := v.Field(i)
 			return &fieldValue, true
@@ -43,16 +47,18 @@ func GetDataModelFieldByTag(model interface{}, tag string) (
 	return nil, false
 }
 
-func GetDataModelFieldValueByTag(model interface{}, tag string) (
+func GetDataModelFieldValueByTag(model interface{},
+	tagKey string, tagValue string) (
 	value interface{}, ok bool) {
-	field, ok := GetDataModelFieldByTag(model, tag)
+	field, ok := GetDataModelFieldByTag(model, tagKey, tagValue)
 	if !ok {
 		return nil, false
 	}
 	return field.Interface(), true
 }
 
-func GetDataModelFieldsByTag(model interface{}, tag string) (
+func GetDataModelFieldsByTag(model interface{},
+	tagKey string, tagValue string) (
 	fields []*reflect.Value) {
 	if model == nil {
 		return nil
@@ -72,12 +78,12 @@ func GetDataModelFieldsByTag(model interface{}, tag string) (
 	t := v.Type()
 	numField := t.NumField()
 	var fieldType reflect.StructField
-	var tagValue string
+	var tag string
 	var hasTag bool
 	fields = nil
 	for i := 0; i < numField; i++ {
 		fieldType = t.Field(i)
-		tagValue, hasTag = fieldType.Tag.Lookup(DataModelTagKey)
+		tag, hasTag = fieldType.Tag.Lookup(tagKey)
 		if hasTag && tagValue == tag {
 			fieldValue := v.Field(i)
 			fields = append(fields, &fieldValue)
@@ -86,7 +92,7 @@ func GetDataModelFieldsByTag(model interface{}, tag string) (
 	return fields
 }
 
-func GetDataModelFieldsGroupByTag(model interface{}) (
+func GetDataModelFieldsGroupByTag(model interface{}, tagKey string) (
 	fieldsMap map[string][]*reflect.Value) {
 	if model == nil {
 		return nil
@@ -111,7 +117,7 @@ func GetDataModelFieldsGroupByTag(model interface{}) (
 	fieldsMap = nil
 	for i := 0; i < numField; i++ {
 		fieldType = t.Field(i)
-		tagValue, hasTag = fieldType.Tag.Lookup(DataModelTagKey)
+		tagValue, hasTag = fieldType.Tag.Lookup(tagKey)
 		if hasTag {
 			fieldValue := v.Field(i)
 			if fieldsMap == nil {

@@ -10,7 +10,7 @@ func NewAccessor(session generic.Session) (
 	dbType := GlobalSettings.Type
 	switch dbType {
 	case DbTypeMongoDB:
-		return mongodb.NewMgoAccessor(session)
+		return mongodb.NewAccessor(session)
 	default:
 		return nil, ErrInvalidDbType
 	}

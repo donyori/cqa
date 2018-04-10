@@ -8,7 +8,7 @@ import (
 
 type DbType int8
 
-type DbSettings struct {
+type Settings struct {
 	Type DbType `json:"type"`
 }
 
@@ -16,10 +16,10 @@ const (
 	DbTypeMongoDB DbType = iota
 )
 
-const DbSettingsFilename string = "settings/db.json"
+const SettingsFilename string = "settings/db.json"
 
 var (
-	GlobalSettings DbSettings
+	GlobalSettings Settings
 
 	ErrInvalidDbType error = errors.New("DB type is invalid")
 
@@ -33,10 +33,14 @@ func init() {
 	GlobalSettings.Type = DbTypeMongoDB
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		DbSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (dt DbType) IsValid() bool {
+	return dt == DbTypeMongoDB
 }
 
 func (dt DbType) String() string {
@@ -44,8 +48,4 @@ func (dt DbType) String() string {
 		return "Unknown"
 	}
 	return dbTypeStrings[dt]
-}
-
-func (dt DbType) IsValid() bool {
-	return dt == DbTypeMongoDB
 }

@@ -12,15 +12,15 @@ import (
 	"github.com/donyori/cqa/data/model/helper"
 )
 
-type MgoAccessor struct {
-	WithMgoSession
+type Accessor struct {
+	WithSession
 }
 
-var ErrNilAccessor error = errors.New("MgoAccessor is nil")
+var ErrNilAccessor error = errors.New("MongoDB accessor is nil")
 
-func NewMgoAccessor(session generic.Session) (
-	accessor *MgoAccessor, err error) {
-	accessor = new(MgoAccessor)
+func NewAccessor(session generic.Session) (
+	accessor *Accessor, err error) {
+	accessor = new(Accessor)
 	if session != nil {
 		err = accessor.SetSession(session)
 		if err != nil {
@@ -30,7 +30,7 @@ func NewMgoAccessor(session generic.Session) (
 	return accessor, nil
 }
 
-func (ma *MgoAccessor) Get(cid dbid.CollectionId, params interface{},
+func (ma *Accessor) Get(cid dbid.CollectionId, params interface{},
 	maker helper.Maker) (res interface{}, err error) {
 	if ma == nil {
 		return nil, ErrNilAccessor
@@ -66,7 +66,7 @@ func (ma *MgoAccessor) Get(cid dbid.CollectionId, params interface{},
 	return res, nil
 }
 
-func (ma *MgoAccessor) GetById(cid dbid.CollectionId, id interface{},
+func (ma *Accessor) GetById(cid dbid.CollectionId, id interface{},
 	maker helper.Maker) (res interface{}, err error) {
 	if ma == nil {
 		return nil, ErrNilAccessor
@@ -79,8 +79,8 @@ func (ma *MgoAccessor) GetById(cid dbid.CollectionId, id interface{},
 	return ma.Get(cid, params, maker)
 }
 
-func (ma *MgoAccessor) Scan(cid dbid.CollectionId, params interface{},
-	bufferSize int, quitC <-chan struct{}, maker helper.Maker) (
+func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
+	bufferSize uint32, quitC <-chan struct{}, maker helper.Maker) (
 	outC <-chan interface{}, resC <-chan error, err error) {
 	if ma == nil {
 		return nil, nil, ErrNilAccessor
@@ -100,12 +100,7 @@ func (ma *MgoAccessor) Scan(cid dbid.CollectionId, params interface{},
 		return nil, nil, err
 	}
 	// Session release in the scan goroutine.
-	var out chan interface{}
-	if bufferSize > 0 {
-		out = make(chan interface{}, bufferSize)
-	} else {
-		out = make(chan interface{})
-	}
+	out := make(chan interface{}, bufferSize)
 	res := make(chan error, 1)
 	go func() {
 		defer session.Release()
@@ -130,7 +125,7 @@ func (ma *MgoAccessor) Scan(cid dbid.CollectionId, params interface{},
 	return out, res, nil
 }
 
-func (ma *MgoAccessor) Save(cid dbid.CollectionId, selector interface{},
+func (ma *Accessor) Save(cid dbid.CollectionId, selector interface{},
 	model interface{}) (isNew bool, err error) {
 	if ma == nil {
 		return false, ErrNilAccessor
@@ -141,7 +136,7 @@ func (ma *MgoAccessor) Save(cid dbid.CollectionId, selector interface{},
 	}
 	defer session.Release()
 	if selector == nil {
-		id, _ := helper.GetId(model)
+		id, _ := helper.GetMongoDbId(model)
 		if id != nil {
 			selector = bson.M{"_id": id}
 		} else {
@@ -159,7 +154,7 @@ func (ma *MgoAccessor) Save(cid dbid.CollectionId, selector interface{},
 	return info.Updated == 0, nil
 }
 
-func (ma *MgoAccessor) SaveById(cid dbid.CollectionId, id interface{},
+func (ma *Accessor) SaveById(cid dbid.CollectionId, id interface{},
 	model interface{}) (isNew bool, err error) {
 	if ma == nil {
 		return false, ErrNilAccessor

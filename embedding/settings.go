@@ -1,19 +1,25 @@
 package embedding
 
 import (
+	"errors"
 	"runtime"
 
 	"github.com/donyori/cqa/common/json"
 )
 
-type EmbeddingSettings struct {
+type Settings struct {
 	GoroutineNumber int `json:"goroutine_number"`
 	MinMillisecond  int `json:"min_millisecond"`
 }
 
-const EmbeddingSettingsFilename string = "settings/embedding.json"
+const SettingsFilename string = "settings/embedding.json"
 
-var GlobalSettings EmbeddingSettings
+var (
+	GlobalSettings Settings
+
+	ErrNonPositiveGoroutineNumber error = errors.New(
+		"goroutine number is non-positive")
+)
 
 func init() {
 	// Default values:
@@ -21,7 +27,7 @@ func init() {
 	GlobalSettings.MinMillisecond = 250
 
 	_, err := json.DecodeJsonFromFileIfExist(
-		EmbeddingSettingsFilename, &GlobalSettings)
+		SettingsFilename, &GlobalSettings)
 	if err != nil {
 		panic(err)
 	}

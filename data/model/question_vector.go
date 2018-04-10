@@ -1,7 +1,7 @@
 package model
 
 type QuestionVector struct {
-	QuestionId  int64     `json:"question_id" bson:"_id" cqadm:"id"`
+	QuestionId  Id        `json:"question_id" bson:"_id" cqadm:"id"`
 	TitleVector *Vector32 `json:"title_vector" bson:"title_vector"`
 }
 
