@@ -9,12 +9,16 @@ import (
 	"github.com/donyori/cqa/data/model/helper"
 )
 
-type QuestionAccessor struct {
+type wrappedAccessor struct {
 	accessor generic.Accessor
 }
 
+type QuestionAccessor struct {
+	wrappedAccessor
+}
+
 type QuestionVectorAccessor struct {
-	accessor generic.Accessor
+	wrappedAccessor
 }
 
 var (
@@ -24,12 +28,21 @@ var (
 	ErrResultTypeWrong error = errors.New("result type is wrong")
 )
 
+func (wa *wrappedAccessor) GetAccessor() generic.Accessor {
+	if wa == nil {
+		return nil
+	}
+	return wa.accessor
+}
+
 func NewQuestionAccessor(accessor generic.Accessor) (
 	questionAccessor *QuestionAccessor, err error) {
 	if accessor == nil {
 		return nil, generic.ErrNilAccessor
 	}
-	return &QuestionAccessor{accessor: accessor}, nil
+	return &QuestionAccessor{
+		wrappedAccessor: wrappedAccessor{accessor: accessor},
+	}, nil
 }
 
 func (qa *QuestionAccessor) Get(params interface{}) (
@@ -158,7 +171,9 @@ func NewQuestionVectorAccessor(accessor generic.Accessor) (
 	if accessor == nil {
 		return nil, generic.ErrNilAccessor
 	}
-	return &QuestionVectorAccessor{accessor: accessor}, nil
+	return &QuestionVectorAccessor{
+		wrappedAccessor: wrappedAccessor{accessor: accessor},
+	}, nil
 }
 
 func (qva *QuestionVectorAccessor) Get(params interface{}) (
