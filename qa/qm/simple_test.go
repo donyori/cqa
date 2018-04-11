@@ -1,0 +1,59 @@
+package qm
+
+import (
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestSimpleMatch(t *testing.T) {
+	defer func() {
+		doneC := Exit(ExitModeGracefully)
+		<-doneC
+		t.Log("Exit successfully.")
+	}()
+	Init()
+	t.Log("Init successfully.")
+	questions := [...]string{
+		"What is pointer?",
+		"What's the cost of vector?",
+		"What is the biggest int in C?",
+	}
+	outs := make([]struct {
+		candidates []*Candidate
+		errs       []error
+		err        error
+	}, len(questions))
+	var wg sync.WaitGroup
+	wg.Add(len(questions))
+	startTime := time.Now()
+	for i := range questions {
+		go func(number int) {
+			defer wg.Done()
+			t.Logf("%d start.", number)
+			var respC <-chan *Response
+			respC, outs[number].err = Match(questions[number], 5)
+			if respC != nil {
+				resp := <-respC
+				outs[number].candidates = resp.Candidates
+				outs[number].errs = resp.Errors
+			}
+			t.Logf("%d done.", number)
+		}(i)
+	}
+	wg.Wait()
+	elapsed := time.Since(startTime)
+	t.Logf("Execution time: %v", elapsed)
+	for i, out := range outs {
+		t.Logf("%d:", i)
+		t.Log("  candidates:")
+		for _, candidate := range out.candidates {
+			t.Logf("    %+v", *candidate)
+		}
+		t.Log("  errors:")
+		for _, e := range out.errs {
+			t.Logf("    %v", e)
+		}
+		t.Logf("  error: %v", out.err)
+	}
+}
