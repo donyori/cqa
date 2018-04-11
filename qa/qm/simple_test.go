@@ -20,9 +20,8 @@ func TestSimpleMatch(t *testing.T) {
 		"What is the biggest int in C?",
 	}
 	outs := make([]struct {
-		candidates []*Candidate
-		errs       []error
-		err        error
+		resp *Response
+		err  error
 	}, len(questions))
 	var wg sync.WaitGroup
 	wg.Add(len(questions))
@@ -32,11 +31,10 @@ func TestSimpleMatch(t *testing.T) {
 			defer wg.Done()
 			t.Logf("%d start.", number)
 			var respC <-chan *Response
-			respC, outs[number].err = Match(questions[number], 5)
+			respC, outs[number].err = Match(
+				questions[number], 5, time.Second*time.Duration(number+1))
 			if respC != nil {
-				resp := <-respC
-				outs[number].candidates = resp.Candidates
-				outs[number].errs = resp.Errors
+				outs[number].resp = <-respC
 			}
 			t.Logf("%d done.", number)
 		}(i)
@@ -47,13 +45,14 @@ func TestSimpleMatch(t *testing.T) {
 	for i, out := range outs {
 		t.Logf("%d:", i)
 		t.Log("  candidates:")
-		for _, candidate := range out.candidates {
+		for _, candidate := range out.resp.Candidates {
 			t.Logf("    %+v", *candidate)
 		}
 		t.Log("  errors:")
-		for _, e := range out.errs {
+		for _, e := range out.resp.Errors {
 			t.Logf("    %v", e)
 		}
+		t.Logf("  is time out: %v", out.resp.IsTimeOut)
 		t.Logf("  error: %v", out.err)
 	}
 }

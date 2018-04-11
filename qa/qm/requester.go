@@ -3,7 +3,9 @@ package qm
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
+	"time"
 
 	"github.com/donyori/cqa/common/container"
 	"github.com/donyori/cqa/common/container/topkbuf"
@@ -76,8 +78,8 @@ func (r *Requester) Init(provider *Provider, matcher *Matcher) error {
 	return nil
 }
 
-func (r *Requester) Match(question string, topNumber int) (
-	respC <-chan *Response, err error) {
+func (r *Requester) Match(question string, topNumber int,
+	timeLimit time.Duration) (respC <-chan *Response, err error) {
 	if r == nil {
 		return nil, ErrNilRequester
 	}
@@ -91,6 +93,13 @@ func (r *Requester) Match(question string, topNumber int) (
 		if topNumber <= 0 {
 			return nil, ErrNonPositiveTopNumber
 		}
+	}
+	if timeLimit < 0 {
+		timeLimit = GlobalSettings.GetDefaultTimeLimit()
+	}
+	var timer *time.Timer
+	if timeLimit > 0 {
+		timer = time.NewTimer(timeLimit)
 	}
 	candidateBuffer, err := topkbuf.NewTopKBuffer(topNumber)
 	if err != nil {
@@ -122,32 +131,28 @@ func (r *Requester) Match(question string, topNumber int) (
 		Wg:        wg,
 	}
 	doneC := make(chan struct{})
+	var timeOutC chan bool
 	wg.Add(1) // For the broadcast goroutine.
 	go r.requestChannelsPostProcessing(req, doneC)
-	go r.shutdownProvider(wg, inQuitC)
+	go r.sendQuitSignal(wg, inQuitC)
+	if timer != nil {
+		timeOutC = make(chan bool, 1)
+		go r.timerProcess(question, timer, timeOutC, inQuitC, quitC)
+	}
 	err = r.matcher.SendRequest(req)
 	if err != nil {
 		// Matcher didn't dispatch request.
 		// Call wg.Done() to stop other goroutines.
 		wg.Done()
 		<-doneC
+		if timeOutC != nil {
+			<-timeOutC
+		}
 		return nil, err
 	}
 	respChannel := make(chan *Response, 1)
-	go r.response(outC, errC, candidateBuffer, respChannel)
+	go r.response(outC, errC, timeOutC, candidateBuffer, respChannel)
 	return respChannel, nil
-}
-
-func (r *Requester) shutdownProvider(wg *sync.WaitGroup,
-	quitC chan<- struct{}) {
-	if wg == nil {
-		panic(errors.New("wait group is nil"))
-	}
-	if quitC == nil {
-		panic(errors.New("quit channel is nil"))
-	}
-	defer close(quitC)
-	wg.Wait()
 }
 
 func (r *Requester) requestChannelsPostProcessing(req *Request,
@@ -176,10 +181,57 @@ func (r *Requester) requestChannelsPostProcessing(req *Request,
 		}
 	}()
 	req.Wg.Wait()
+	if req.InC != nil && req.ErrC != nil {
+		rin := len(req.InC)
+		if rin > 0 {
+			req.ErrC <- fmt.Errorf("remaining inputs number: %d", rin)
+		}
+	}
+}
+
+func (r *Requester) sendQuitSignal(wg *sync.WaitGroup,
+	quitC chan<- struct{}) {
+	if wg == nil {
+		panic(errors.New("wait group is nil"))
+	}
+	if quitC == nil {
+		panic(errors.New("quit channel is nil"))
+	}
+	defer close(quitC)
+	wg.Wait()
+}
+
+func (r *Requester) timerProcess(q string, timer *time.Timer,
+	outC chan<- bool, quitC <-chan struct{}, reqQuitC chan<- struct{}) {
+	isTimeOut := false
+	if outC != nil {
+		defer func() {
+			outC <- isTimeOut
+			close(outC)
+		}()
+	}
+	if reqQuitC == nil {
+		panic(errors.New("request quit channel is nil"))
+	}
+	if timer == nil {
+		return
+	}
+	select {
+	case <-quitC:
+		if !timer.Stop() {
+			// Drain time.C
+			<-timer.C
+		}
+	case <-timer.C:
+		defer log.Printf("Question matching time out: %q\n", q)
+		isTimeOut = true
+		close(reqQuitC)
+	}
 }
 
 func (r *Requester) response(candidateC <-chan *Candidate, errC <-chan error,
-	candidateBuffer *topkbuf.TopKBuffer, respC chan<- *Response) {
+	isTimeOutC <-chan bool, candidateBuffer *topkbuf.TopKBuffer,
+	respC chan<- *Response) {
 	if respC == nil {
 		panic(errors.New("response channel is nil"))
 	}
@@ -187,9 +239,14 @@ func (r *Requester) response(candidateC <-chan *Candidate, errC <-chan error,
 	var candidates []*Candidate
 	var errs []error
 	defer func() {
+		isTimeOut := false
+		if isTimeOutC != nil {
+			isTimeOut = <-isTimeOutC
+		}
 		resp := &Response{
 			Candidates: candidates,
 			Errors:     errs,
+			IsTimeOut:  isTimeOut,
 		}
 		respC <- resp
 	}()

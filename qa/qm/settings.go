@@ -2,6 +2,7 @@ package qm
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/donyori/cqa/common/json"
 )
@@ -9,9 +10,10 @@ import (
 type ExitMode int8
 
 type Settings struct {
-	DefaultTopNumber     int      `json:"default_top_number"`
-	DefaultExitMode      ExitMode `json:"default_exit_mode"`
-	DefaultMatcherNumber int      `json:"matcher_number"`
+	DefaultTopNumber            int      `json:"default_top_number"`
+	DefaultTimeLimitMillisecond int64    `json:"default_time_limit_millisecond"`
+	DefaultExitMode             ExitMode `json:"default_exit_mode"`
+	DefaultMatcherNumber        int      `json:"matcher_number"`
 
 	RequestBufferSize uint32 `json:"request_buffer_size"`
 	ErrorBufferSize   uint32 `json:"error_buffer_size"`
@@ -42,14 +44,17 @@ var (
 func init() {
 	// Default values:
 	GlobalSettings.DefaultTopNumber = 5
+	GlobalSettings.DefaultTimeLimitMillisecond = 0
 	GlobalSettings.DefaultExitMode = ExitModeGracefully
 	GlobalSettings.DefaultMatcherNumber = runtime.NumCPU()
+
 	GlobalSettings.RequestBufferSize = 5
 	GlobalSettings.ErrorBufferSize = uint32(
 		(GlobalSettings.DefaultMatcherNumber + 1) * 2)
 	GlobalSettings.InputBufferSize = 5
 	GlobalSettings.OutputBufferSize = uint32(
 		GlobalSettings.DefaultMatcherNumber)
+
 	GlobalSettings.EnableQuestionVectorBuffer = true
 
 	_, err := json.DecodeJsonFromFileIfExist(
@@ -68,4 +73,11 @@ func (em ExitMode) String() string {
 		return "unknown"
 	}
 	return exitModeStrings[em]
+}
+
+func (s *Settings) GetDefaultTimeLimit() time.Duration {
+	if s == nil {
+		return 0
+	}
+	return time.Millisecond * time.Duration(s.DefaultTimeLimitMillisecond)
 }

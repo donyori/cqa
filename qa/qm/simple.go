@@ -2,6 +2,7 @@ package qm
 
 import (
 	"sync"
+	"time"
 )
 
 var (
@@ -81,12 +82,17 @@ func GetMatcherNumber() int {
 	return defaultMatcher.GetMatcherNumber()
 }
 
-func Match(question string, topNumber int) (respC <-chan *Response, err error) {
+func Match(question string, topNumber int, timeLimit time.Duration) (
+	respC <-chan *Response, err error) {
 	Init()
 	simpleLock.RLock()
 	defer simpleLock.RUnlock()
 	if defaultRequester == nil {
 		return nil, ErrMatcherShutdown
 	}
-	return defaultRequester.Match(question, topNumber)
+	return defaultRequester.Match(question, topNumber, timeLimit)
+}
+
+func SimpleMatch(question string) (respC <-chan *Response, err error) {
+	return Match(question, -1, -1)
 }
