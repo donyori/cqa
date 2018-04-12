@@ -20,7 +20,7 @@ func QuestionEmbedding() error {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
 		}
 	}()
 	if goroutineNumber <= 0 {
@@ -60,7 +60,7 @@ func QuestionEmbedding() error {
 			var e error
 			defer func() {
 				if e != nil {
-					log.Fatalf("*** Error occurs on %v: %v\n", number, e)
+					log.Printf("*** Error occurs on %v: %v\n", number, e)
 				}
 			}()
 			sess, e := db.NewSession()
