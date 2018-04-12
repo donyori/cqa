@@ -79,5 +79,11 @@ func (s *Settings) GetDefaultTimeLimit() time.Duration {
 	if s == nil {
 		return 0
 	}
-	return time.Millisecond * time.Duration(s.DefaultTimeLimitMillisecond)
+	var tl time.Duration
+	if s.DefaultTimeLimitMillisecond > 0 {
+		tl = time.Millisecond * time.Duration(s.DefaultTimeLimitMillisecond)
+	} else {
+		tl = time.Duration(s.DefaultTimeLimitMillisecond)
+	}
+	return tl
 }
