@@ -9,7 +9,7 @@ type Settings struct {
 	EmbeddingPath string `json:"embedding_path"`
 }
 
-const SettingsFilename string = "settings/nlp_api.json"
+const SettingsFilename string = "../settings/nlp_api.json"
 
 var GlobalSettings Settings
 

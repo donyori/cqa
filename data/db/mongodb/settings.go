@@ -15,7 +15,7 @@ type Settings struct {
 	PoolLimit int `json:"pool_limit"`
 }
 
-const SettingsFilename string = "settings/mgo.json"
+const SettingsFilename string = "../settings/mongodb.json"
 
 var (
 	GlobalSettings Settings

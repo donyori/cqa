@@ -29,7 +29,7 @@ const (
 	ExitModeForcedly
 )
 
-const SettingsFilename string = "settings/qm.json"
+const SettingsFilename string = "../settings/qm.json"
 
 var (
 	exitModeStrings = [...]string{

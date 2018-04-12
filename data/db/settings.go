@@ -16,7 +16,7 @@ const (
 	DbTypeMongoDB DbType = iota
 )
 
-const SettingsFilename string = "settings/db.json"
+const SettingsFilename string = "../settings/db.json"
 
 var (
 	GlobalSettings Settings

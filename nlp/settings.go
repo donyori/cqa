@@ -16,7 +16,7 @@ const (
 	NlpSourceRestfulApi NlpSource = iota
 )
 
-const SettingsFilename string = "settings/nlp.json"
+const SettingsFilename string = "../settings/nlp.json"
 
 var (
 	GlobalSettings Settings
