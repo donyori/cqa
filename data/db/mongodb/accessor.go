@@ -2,9 +2,9 @@ package mongodb
 
 import (
 	"errors"
+	"reflect"
 
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/donyori/cqa/data/db/generic"
 	dbhelper "github.com/donyori/cqa/data/db/helper"
@@ -30,13 +30,13 @@ func NewAccessor(session generic.Session) (
 	return accessor, nil
 }
 
-func (ma *Accessor) Get(cid dbid.CollectionId, params interface{},
-	maker helper.Maker) (res interface{}, err error) {
-	if ma == nil {
+func (a *Accessor) FetchOne(cid dbid.CollectionId, params interface{},
+	modelType reflect.Type) (res interface{}, err error) {
+	if a == nil {
 		return nil, ErrNilAccessor
 	}
-	if maker == nil {
-		maker, err = dbhelper.GetMakerByCollectionId(cid)
+	if modelType == nil {
+		modelType, err = dbhelper.GetModelTypeByCollectionId(cid)
 		if err != nil {
 			return nil, err
 		}
@@ -48,14 +48,14 @@ func (ma *Accessor) Get(cid dbid.CollectionId, params interface{},
 	if qp == nil {
 		qp = NewQueryParams()
 	}
-	session, c, err := ma.aquireSessionAndCollection(cid)
+	qp.Limit = 1
+	session, c, err := a.aquireSessionAndCollection(cid)
 	if err != nil {
 		return nil, err
 	}
 	defer session.Release()
-	qp.Limit = 1
 	q := qp.MakeQuery(c)
-	res = maker()
+	res = reflect.New(modelType).Interface()
 	err = q.One(res)
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -66,27 +66,68 @@ func (ma *Accessor) Get(cid dbid.CollectionId, params interface{},
 	return res, nil
 }
 
-func (ma *Accessor) GetById(cid dbid.CollectionId, id interface{},
-	maker helper.Maker) (res interface{}, err error) {
-	if ma == nil {
+func (a *Accessor) FetchOneById(cid dbid.CollectionId, id interface{},
+	modelType reflect.Type) (res interface{}, err error) {
+	if a == nil {
 		return nil, ErrNilAccessor
 	}
-	if id == nil {
-		return nil, generic.ErrNilId
+	params, err := NewQueryParamsById(id)
+	if err != nil {
+		return nil, err
 	}
-	params := NewQueryParams()
-	params.Id = id
-	return ma.Get(cid, params, maker)
+	return a.FetchOne(cid, params, modelType)
 }
 
-func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
-	bufferSize uint32, quitC <-chan struct{}, maker helper.Maker) (
+func (a *Accessor) FetchAll(cid dbid.CollectionId, params interface{},
+	modelType reflect.Type) (res interface{}, err error) {
+	if a == nil {
+		return nil, ErrNilAccessor
+	}
+	if modelType == nil {
+		modelType, err = dbhelper.GetModelTypeByCollectionId(cid)
+		if err != nil {
+			return nil, err
+		}
+	}
+	qp, err := ConvertToQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+	session, c, err := a.aquireSessionAndCollection(cid)
+	if err != nil {
+		return nil, err
+	}
+	defer session.Release()
+	q := qp.MakeQuery(c)
+	spt := reflect.SliceOf(reflect.PtrTo(modelType))
+	pResV := reflect.New(spt)
+	err = q.All(pResV.Interface())
+	if err != nil {
+		return nil, err
+	}
+	return pResV.Elem().Interface(), nil
+}
+
+func (a *Accessor) FetchAllByIds(cid dbid.CollectionId, ids interface{},
+	modelType reflect.Type) (res interface{}, err error) {
+	if a == nil {
+		return nil, ErrNilAccessor
+	}
+	params, err := NewQueryParamsByIds(ids)
+	if err != nil {
+		return nil, err
+	}
+	return a.FetchAll(cid, params, modelType)
+}
+
+func (a *Accessor) Scan(cid dbid.CollectionId, params interface{},
+	bufferSize uint32, quitC <-chan struct{}, modelType reflect.Type) (
 	outC <-chan interface{}, resC <-chan error, err error) {
-	if ma == nil {
+	if a == nil {
 		return nil, nil, ErrNilAccessor
 	}
-	if maker == nil {
-		maker, err = dbhelper.GetMakerByCollectionId(cid)
+	if modelType == nil {
+		modelType, err = dbhelper.GetModelTypeByCollectionId(cid)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -95,7 +136,7 @@ func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
 	if err != nil {
 		return nil, nil, err
 	}
-	session, c, err := ma.aquireSessionAndCollection(cid)
+	session, c, err := a.aquireSessionAndCollection(cid)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,7 +150,7 @@ func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
 		defer iter.Close()
 		defer close(res)
 		defer close(out)
-		result := maker()
+		result := reflect.New(modelType).Interface()
 		isQuit := false
 		for !isQuit && iter.Next(result) {
 			select {
@@ -117,7 +158,8 @@ func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
 				isQuit = true
 			default:
 				out <- result
-				result = maker() // Make new one each time.
+				// Make new one each time.
+				result = reflect.New(modelType).Interface()
 			}
 		}
 		res <- iter.Err()
@@ -125,12 +167,25 @@ func (ma *Accessor) Scan(cid dbid.CollectionId, params interface{},
 	return out, res, nil
 }
 
-func (ma *Accessor) Save(cid dbid.CollectionId, selector interface{},
+func (a *Accessor) ScanByIds(cid dbid.CollectionId, ids interface{},
+	bufferSize uint32, quitC <-chan struct{}, modelType reflect.Type) (
+	outC <-chan interface{}, resC <-chan error, err error) {
+	if a == nil {
+		return nil, nil, ErrNilAccessor
+	}
+	params, err := NewQueryParamsByIds(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	return a.Scan(cid, params, bufferSize, quitC, modelType)
+}
+
+func (a *Accessor) SaveOne(cid dbid.CollectionId, selector interface{},
 	model interface{}) (isNew bool, err error) {
-	if ma == nil {
+	if a == nil {
 		return false, ErrNilAccessor
 	}
-	session, c, err := ma.aquireSessionAndCollection(cid)
+	session, c, err := a.aquireSessionAndCollection(cid)
 	if err != nil {
 		return false, err
 	}
@@ -138,7 +193,10 @@ func (ma *Accessor) Save(cid dbid.CollectionId, selector interface{},
 	if selector == nil {
 		id, _ := helper.GetMongoDbId(model)
 		if id != nil {
-			selector = bson.M{"_id": id}
+			selector, err = NewParamById(id)
+			if err != nil {
+				return false, err
+			}
 		} else {
 			err = c.Insert(model)
 			if err != nil {
@@ -154,13 +212,14 @@ func (ma *Accessor) Save(cid dbid.CollectionId, selector interface{},
 	return info.Updated == 0, nil
 }
 
-func (ma *Accessor) SaveById(cid dbid.CollectionId, id interface{},
+func (a *Accessor) SaveOneById(cid dbid.CollectionId, id interface{},
 	model interface{}) (isNew bool, err error) {
-	if ma == nil {
+	if a == nil {
 		return false, ErrNilAccessor
 	}
-	if id == nil {
-		return false, generic.ErrNilId
+	selector, err := NewParamById(id)
+	if err != nil {
+		return false, err
 	}
-	return ma.Save(cid, bson.M{"_id": id}, model)
+	return a.SaveOne(cid, selector, model)
 }

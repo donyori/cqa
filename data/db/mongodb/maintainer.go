@@ -97,7 +97,7 @@ func (mm *Maintainer) EnsureDataTypes(cid id.CollectionId) error {
 	defer close(quitC)
 	outC, resC, err := accessor.Scan(cid, nil, 4, quitC, nil)
 	for data := range outC {
-		_, err = accessor.Save(cid, nil, data)
+		_, err = accessor.SaveOne(cid, nil, data)
 		if err != nil {
 			quitC <- struct{}{}
 			return err

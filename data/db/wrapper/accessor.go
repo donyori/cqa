@@ -6,7 +6,6 @@ import (
 	"github.com/donyori/cqa/data/db/generic"
 	dbid "github.com/donyori/cqa/data/db/id"
 	"github.com/donyori/cqa/data/model"
-	"github.com/donyori/cqa/data/model/helper"
 )
 
 type wrappedAccessor struct {
@@ -45,13 +44,12 @@ func NewQuestionAccessor(accessor generic.Accessor) (
 	}, nil
 }
 
-func (qa *QuestionAccessor) Get(params interface{}) (
+func (qa *QuestionAccessor) FetchOne(params interface{}) (
 	question *model.Question, err error) {
 	if qa == nil {
 		return nil, ErrNilQuestionAccessor
 	}
-	res, err := qa.accessor.Get(dbid.QuestionCollection,
-		params, helper.QuestionMaker)
+	res, err := qa.accessor.FetchOne(dbid.QuestionCollection, params, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +60,12 @@ func (qa *QuestionAccessor) Get(params interface{}) (
 	return question, nil
 }
 
-func (qa *QuestionAccessor) GetById(id interface{}) (
+func (qa *QuestionAccessor) FetchOneById(id model.Id) (
 	question *model.Question, err error) {
 	if qa == nil {
 		return nil, ErrNilQuestionAccessor
 	}
-	res, err := qa.accessor.GetById(dbid.QuestionCollection,
-		id, helper.QuestionMaker)
+	res, err := qa.accessor.FetchOneById(dbid.QuestionCollection, id, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +74,38 @@ func (qa *QuestionAccessor) GetById(id interface{}) (
 		return nil, ErrResultTypeWrong
 	}
 	return question, nil
+}
+
+func (qa *QuestionAccessor) FetchAll(params interface{}) (
+	questions []*model.Question, err error) {
+	if qa == nil {
+		return nil, ErrNilQuestionAccessor
+	}
+	res, err := qa.accessor.FetchAll(dbid.QuestionCollection, params, nil)
+	if err != nil {
+		return nil, err
+	}
+	questions, ok := res.([]*model.Question)
+	if !ok {
+		return nil, ErrResultTypeWrong
+	}
+	return questions, nil
+}
+
+func (qa *QuestionAccessor) FetchAllByIds(ids []model.Id) (
+	questions []*model.Question, err error) {
+	if qa == nil {
+		return nil, ErrNilQuestionAccessor
+	}
+	res, err := qa.accessor.FetchAllByIds(dbid.QuestionCollection, ids, nil)
+	if err != nil {
+		return nil, err
+	}
+	questions, ok := res.([]*model.Question)
+	if !ok {
+		return nil, ErrResultTypeWrong
+	}
+	return questions, nil
 }
 
 func (qa *QuestionAccessor) Scan(params interface{}, bufferSize uint32,
@@ -85,9 +114,47 @@ func (qa *QuestionAccessor) Scan(params interface{}, bufferSize uint32,
 	if qa == nil {
 		return nil, nil, ErrNilQuestionAccessor
 	}
+	return qa.scan(params, bufferSize, quitC, false)
+}
+
+func (qa *QuestionAccessor) ScanByIds(ids []model.Id, bufferSize uint32,
+	quitC <-chan struct{}) (outC <-chan *model.Question,
+	resC <-chan error, err error) {
+	if qa == nil {
+		return nil, nil, ErrNilQuestionAccessor
+	}
+	return qa.scan(ids, bufferSize, quitC, true)
+}
+
+func (qa *QuestionAccessor) SaveOne(selector interface{},
+	question *model.Question) (isNew bool, err error) {
+	if qa == nil {
+		return false, ErrNilQuestionAccessor
+	}
+	return qa.accessor.SaveOne(dbid.QuestionCollection, selector, question)
+}
+
+func (qa *QuestionAccessor) SaveOneById(id model.Id,
+	question *model.Question) (isNew bool, err error) {
+	if qa == nil {
+		return false, ErrNilQuestionAccessor
+	}
+	return qa.accessor.SaveOneById(dbid.QuestionCollection, id, question)
+}
+
+func (qa *QuestionAccessor) scan(params interface{}, bufferSize uint32,
+	quitC <-chan struct{}, paramsAreIds bool) (outC <-chan *model.Question,
+	resC <-chan error, err error) {
 	quitChannel := make(chan struct{}, 1)
-	out, res, err := qa.accessor.Scan(dbid.QuestionCollection,
-		params, bufferSize, quitChannel, helper.QuestionMaker)
+	var out <-chan interface{}
+	var res <-chan error
+	if paramsAreIds {
+		out, res, err = qa.accessor.ScanByIds(dbid.QuestionCollection,
+			params, bufferSize, quitChannel, nil)
+	} else {
+		out, res, err = qa.accessor.Scan(dbid.QuestionCollection,
+			params, bufferSize, quitChannel, nil)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -150,24 +217,8 @@ func (qa *QuestionAccessor) Scan(params interface{}, bufferSize uint32,
 	return outChannel, resultChannel, nil
 }
 
-func (qa *QuestionAccessor) Save(selector interface{},
-	question *model.Question) (isNew bool, err error) {
-	if qa == nil {
-		return false, ErrNilQuestionAccessor
-	}
-	return qa.accessor.Save(dbid.QuestionCollection, selector, question)
-}
-
-func (qa *QuestionAccessor) SaveById(id interface{},
-	question *model.Question) (isNew bool, err error) {
-	if qa == nil {
-		return false, ErrNilQuestionAccessor
-	}
-	return qa.accessor.SaveById(dbid.QuestionCollection, id, question)
-}
-
 func NewQuestionVectorAccessor(accessor generic.Accessor) (
-	questionAccessor *QuestionVectorAccessor, err error) {
+	qva *QuestionVectorAccessor, err error) {
 	if accessor == nil {
 		return nil, generic.ErrNilAccessor
 	}
@@ -176,38 +227,72 @@ func NewQuestionVectorAccessor(accessor generic.Accessor) (
 	}, nil
 }
 
-func (qva *QuestionVectorAccessor) Get(params interface{}) (
-	question *model.QuestionVector, err error) {
+func (qva *QuestionVectorAccessor) FetchOne(params interface{}) (
+	qv *model.QuestionVector, err error) {
 	if qva == nil {
 		return nil, ErrNilQuestionVectorAccessor
 	}
-	res, err := qva.accessor.Get(dbid.QuestionVectorCollection,
-		params, helper.QuestionVectorMaker)
+	res, err := qva.accessor.FetchOne(
+		dbid.QuestionVectorCollection, params, nil)
 	if err != nil {
 		return nil, err
 	}
-	question, ok := res.(*model.QuestionVector)
+	qv, ok := res.(*model.QuestionVector)
 	if !ok {
 		return nil, ErrResultTypeWrong
 	}
-	return question, nil
+	return qv, nil
 }
 
-func (qva *QuestionVectorAccessor) GetById(id interface{}) (
-	question *model.QuestionVector, err error) {
+func (qva *QuestionVectorAccessor) FetchOneById(id model.Id) (
+	qv *model.QuestionVector, err error) {
 	if qva == nil {
 		return nil, ErrNilQuestionVectorAccessor
 	}
-	res, err := qva.accessor.GetById(dbid.QuestionVectorCollection,
-		id, helper.QuestionVectorMaker)
+	res, err := qva.accessor.FetchOneById(
+		dbid.QuestionVectorCollection, id, nil)
 	if err != nil {
 		return nil, err
 	}
-	question, ok := res.(*model.QuestionVector)
+	qv, ok := res.(*model.QuestionVector)
 	if !ok {
 		return nil, ErrResultTypeWrong
 	}
-	return question, nil
+	return qv, nil
+}
+
+func (qva *QuestionVectorAccessor) FetchAll(params interface{}) (
+	qvs []*model.QuestionVector, err error) {
+	if qva == nil {
+		return nil, ErrNilQuestionVectorAccessor
+	}
+	res, err := qva.accessor.FetchAll(
+		dbid.QuestionVectorCollection, params, nil)
+	if err != nil {
+		return nil, err
+	}
+	qvs, ok := res.([]*model.QuestionVector)
+	if !ok {
+		return nil, ErrResultTypeWrong
+	}
+	return qvs, nil
+}
+
+func (qva *QuestionVectorAccessor) FetchAllByIds(ids []model.Id) (
+	qvs []*model.QuestionVector, err error) {
+	if qva == nil {
+		return nil, ErrNilQuestionVectorAccessor
+	}
+	res, err := qva.accessor.FetchAllByIds(
+		dbid.QuestionVectorCollection, ids, nil)
+	if err != nil {
+		return nil, err
+	}
+	qvs, ok := res.([]*model.QuestionVector)
+	if !ok {
+		return nil, ErrResultTypeWrong
+	}
+	return qvs, nil
 }
 
 func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
@@ -216,9 +301,48 @@ func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
 	if qva == nil {
 		return nil, nil, ErrNilQuestionVectorAccessor
 	}
+	return qva.scan(params, bufferSize, quitC, false)
+}
+
+func (qva *QuestionVectorAccessor) ScanByIds(ids []model.Id, bufferSize uint32,
+	quitC <-chan struct{}) (outC <-chan *model.QuestionVector,
+	resC <-chan error, err error) {
+	if qva == nil {
+		return nil, nil, ErrNilQuestionVectorAccessor
+	}
+	return qva.scan(ids, bufferSize, quitC, true)
+}
+
+func (qva *QuestionVectorAccessor) SaveOne(selector interface{},
+	qv *model.QuestionVector) (isNew bool, err error) {
+	if qva == nil {
+		return false, ErrNilQuestionVectorAccessor
+	}
+	return qva.accessor.SaveOne(
+		dbid.QuestionVectorCollection, selector, qv)
+}
+
+func (qva *QuestionVectorAccessor) SaveOneById(id model.Id,
+	qv *model.QuestionVector) (isNew bool, err error) {
+	if qva == nil {
+		return false, ErrNilQuestionVectorAccessor
+	}
+	return qva.accessor.SaveOneById(dbid.QuestionVectorCollection, id, qv)
+}
+
+func (qva *QuestionVectorAccessor) scan(params interface{}, bufferSize uint32,
+	quitC <-chan struct{}, paramsAreIds bool) (
+	outC <-chan *model.QuestionVector, resC <-chan error, err error) {
 	quitChannel := make(chan struct{}, 1)
-	out, res, err := qva.accessor.Scan(dbid.QuestionVectorCollection,
-		params, bufferSize, quitChannel, helper.QuestionVectorMaker)
+	var out <-chan interface{}
+	var res <-chan error
+	if paramsAreIds {
+		out, res, err = qva.accessor.ScanByIds(dbid.QuestionVectorCollection,
+			params, bufferSize, quitChannel, nil)
+	} else {
+		out, res, err = qva.accessor.Scan(dbid.QuestionVectorCollection,
+			params, bufferSize, quitChannel, nil)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -252,9 +376,9 @@ func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
 					isQuit = true
 					break
 				}
-				question, ok := q.(*model.QuestionVector)
+				qv, ok := q.(*model.QuestionVector)
 				if ok {
-					outChannel <- question
+					outChannel <- qv
 				} else {
 					if quitChannel != nil {
 						quitChannel <- struct{}{}
@@ -265,9 +389,9 @@ func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
 			case e = <-res:
 				// Drain channel
 				for q := range out {
-					question, ok := q.(*model.QuestionVector)
+					qv, ok := q.(*model.QuestionVector)
 					if ok {
-						outChannel <- question
+						outChannel <- qv
 					} else {
 						e = ErrResultTypeWrong
 						break
@@ -279,20 +403,4 @@ func (qva *QuestionVectorAccessor) Scan(params interface{}, bufferSize uint32,
 		resultChannel <- e
 	}()
 	return outChannel, resultChannel, nil
-}
-
-func (qva *QuestionVectorAccessor) Save(selector interface{},
-	question *model.QuestionVector) (isNew bool, err error) {
-	if qva == nil {
-		return false, ErrNilQuestionVectorAccessor
-	}
-	return qva.accessor.Save(dbid.QuestionVectorCollection, selector, question)
-}
-
-func (qva *QuestionVectorAccessor) SaveById(id interface{},
-	question *model.QuestionVector) (isNew bool, err error) {
-	if qva == nil {
-		return false, ErrNilQuestionVectorAccessor
-	}
-	return qva.accessor.SaveById(dbid.QuestionVectorCollection, id, question)
 }

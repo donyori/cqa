@@ -109,7 +109,7 @@ func QuestionEmbedding() error {
 				qv := model.NewQuestionVector()
 				qv.QuestionId = question.QuestionId
 				qv.TitleVector = vector
-				_, e = qva.SaveById(qv.QuestionId, qv)
+				_, e = qva.SaveOneById(qv.QuestionId, qv)
 				if e != nil {
 					return
 				}
