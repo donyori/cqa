@@ -39,8 +39,8 @@ var (
 	ErrNotSession           error = errors.New(
 		"session is not a MongoDB session")
 
-	sessionSeedMap map[string]*sessionSeed
-	mapLock        sync.Mutex
+	sessionSeedMap     map[string]*sessionSeed
+	sessionSeedMapLock sync.Mutex
 )
 
 func init() {
@@ -52,8 +52,8 @@ func acquireSession(url string, settings *Settings) (
 	if settings == nil {
 		settings = &GlobalSettings
 	}
-	mapLock.Lock()
-	defer mapLock.Unlock()
+	sessionSeedMapLock.Lock()
+	defer sessionSeedMapLock.Unlock()
 	if sessionSeedMap == nil {
 		return nil, ErrSessionPoolCleanedUp
 	}
@@ -92,8 +92,8 @@ func releaseSession(url string, sess *mgo.Session) {
 	if sess == nil {
 		return
 	}
-	mapLock.Lock()
-	defer mapLock.Unlock()
+	sessionSeedMapLock.Lock()
+	defer sessionSeedMapLock.Unlock()
 	if sessionSeedMap == nil {
 		return
 	}
@@ -105,8 +105,8 @@ func releaseSession(url string, sess *mgo.Session) {
 }
 
 func CleanUpSessionPool() {
-	mapLock.Lock()
-	defer mapLock.Unlock()
+	sessionSeedMapLock.Lock()
+	defer sessionSeedMapLock.Unlock()
 	if sessionSeedMap == nil {
 		return
 	}
