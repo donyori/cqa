@@ -106,10 +106,11 @@ func (m *Matcher) Init(matcherNumber int) error {
 }
 
 func (m *Matcher) Exit(mode ExitMode) <-chan struct{} {
-	if m == nil {
-		panic(ErrNilMatcher)
-	}
 	exitDoneC := make(chan struct{})
+	if m == nil {
+		close(exitDoneC)
+		return exitDoneC
+	}
 	isInitialized := true
 	// It makes sure that cannot init after exit.
 	m.initOnce.Do(func() {
