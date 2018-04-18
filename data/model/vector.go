@@ -3,7 +3,7 @@ package model
 import (
 	stdmath "math"
 
-	"github.com/donyori/cqa/math.32"
+	"github.com/donyori/cqa/common/math.32"
 )
 
 type Vector32 struct {
