@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-
-	_ "net/http/pprof"
 )
 
 type Server struct {
@@ -61,6 +59,7 @@ func (srv *Server) Launch(addr string, handler http.Handler) error {
 	if srv == nil {
 		return ErrNilServer
 	}
+	Init()
 	err := func() error {
 		srv.sLock.Lock()
 		defer srv.sLock.Unlock()

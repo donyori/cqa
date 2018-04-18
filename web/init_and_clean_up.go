@@ -12,6 +12,7 @@ var (
 )
 
 func Init() {
+	SetUrls()
 	initOnce.Do(func() {
 		err := LoadTemplates()
 		if err != nil {
