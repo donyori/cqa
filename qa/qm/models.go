@@ -28,7 +28,7 @@ type Request struct {
 type Response struct {
 	Candidates []*Candidate
 	Errors     []error
-	IsTimeOut  bool
+	IsTimeout  bool
 }
 
 var (

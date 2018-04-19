@@ -11,7 +11,7 @@ import (
 
 func main() {
 	exitC := make(chan os.Signal, 1)
-	signal.Notify(exitC, os.Interrupt, os.Kill)
+	signal.Notify(exitC, os.Interrupt)
 
 	defer func() {
 		log.Println("cqaserver exits.")

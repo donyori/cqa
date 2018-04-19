@@ -57,7 +57,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tl = time.Duration(tlms)
 	}
-	sqs, err := qa.SearchSimilarQuestions(q, top, tl)
+	sqs, isTimeout, err := qa.SearchSimilarQuestions(q, top, tl)
 	if err != nil {
 		HandleInternalServerError(w, err)
 		return
@@ -106,8 +106,11 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	elapsed := time.Since(startTime)
 	err = Render(w, "qa_result.tmpl", &QaResultData{
 		Question:         q,
+		Top:              top,
+		TimeLimitMs:      tlms,
 		SimilarQuestions: similarQuestions,
 		Elapsed:          elapsed,
+		IsTimeout:        isTimeout,
 	})
 	if err != nil {
 		HandleInternalServerError(w, err)

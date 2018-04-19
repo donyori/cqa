@@ -131,13 +131,13 @@ func (r *Requester) Match(question string, topNumber int,
 		Wg:        wg,
 	}
 	doneC := make(chan struct{})
-	var timeOutC chan bool
+	var timeoutC chan bool
 	wg.Add(1) // For the broadcast goroutine.
 	go r.requestChannelsPostProcessing(req, doneC)
 	go r.sendQuitSignal(wg, inQuitC)
 	if timer != nil {
-		timeOutC = make(chan bool, 1)
-		go r.timerProcess(question, timer, timeOutC, inQuitC, quitC)
+		timeoutC = make(chan bool, 1)
+		go r.timerProcess(question, timer, timeoutC, inQuitC, quitC)
 	}
 	err = r.matcher.SendRequest(req)
 	if err != nil {
@@ -145,13 +145,13 @@ func (r *Requester) Match(question string, topNumber int,
 		// Call wg.Done() to stop other goroutines.
 		wg.Done()
 		<-doneC
-		if timeOutC != nil {
-			<-timeOutC
+		if timeoutC != nil {
+			<-timeoutC
 		}
 		return nil, err
 	}
 	respChannel := make(chan *Response, 1)
-	go r.response(outC, errC, timeOutC, candidateBuffer, respChannel)
+	go r.response(outC, errC, timeoutC, candidateBuffer, respChannel)
 	return respChannel, nil
 }
 
@@ -203,10 +203,10 @@ func (r *Requester) sendQuitSignal(wg *sync.WaitGroup,
 
 func (r *Requester) timerProcess(q string, timer *time.Timer,
 	outC chan<- bool, quitC <-chan struct{}, reqQuitC chan<- struct{}) {
-	isTimeOut := false
+	isTimeout := false
 	if outC != nil {
 		defer func() {
-			outC <- isTimeOut
+			outC <- isTimeout
 			close(outC)
 		}()
 	}
@@ -224,13 +224,13 @@ func (r *Requester) timerProcess(q string, timer *time.Timer,
 		}
 	case <-timer.C:
 		defer log.Printf("Question matching time out: %q\n", q)
-		isTimeOut = true
+		isTimeout = true
 		close(reqQuitC)
 	}
 }
 
 func (r *Requester) response(candidateC <-chan *Candidate, errC <-chan error,
-	isTimeOutC <-chan bool, candidateBuffer *topkbuf.TopKBuffer,
+	isTimeoutC <-chan bool, candidateBuffer *topkbuf.TopKBuffer,
 	respC chan<- *Response) {
 	if respC == nil {
 		panic(errors.New("response channel is nil"))
@@ -239,14 +239,14 @@ func (r *Requester) response(candidateC <-chan *Candidate, errC <-chan error,
 	var candidates []*Candidate
 	var errs []error
 	defer func() {
-		isTimeOut := false
-		if isTimeOutC != nil {
-			isTimeOut = <-isTimeOutC
+		isTimeout := false
+		if isTimeoutC != nil {
+			isTimeout = <-isTimeoutC
 		}
 		resp := &Response{
 			Candidates: candidates,
 			Errors:     errs,
-			IsTimeOut:  isTimeOut,
+			IsTimeout:  isTimeout,
 		}
 		respC <- resp
 	}()

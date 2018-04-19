@@ -10,10 +10,11 @@ import (
 )
 
 func SearchSimilarQuestions(question string, topNumber int,
-	timeLimit time.Duration) (res []*SimilarQuestion, err error) {
+	timeLimit time.Duration) (
+	res []*SimilarQuestion, isTimeout bool, err error) {
 	respC, err := qm.Match(question, topNumber, timeLimit)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	resp := <-respC
 	idIndexMap := make(map[model.Id]int)
@@ -24,20 +25,20 @@ func SearchSimilarQuestions(question string, topNumber int,
 	}
 	sess, err := db.NewSession()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer sess.Close()
 	accessor, err := db.NewAccessor(sess)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	questionAccessor, err := wrapper.NewQuestionAccessor(accessor)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	outC, resC, err := questionAccessor.ScanByIds(ids, 5, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	res = make([]*SimilarQuestion, len(resp.Candidates))
 	count := 0
@@ -59,5 +60,5 @@ func SearchSimilarQuestions(question string, topNumber int,
 			res = append(res, r)
 		}
 	}
-	return res, <-resC
+	return res, resp.IsTimeout, <-resC
 }

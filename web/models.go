@@ -28,6 +28,9 @@ type SimilarQuestionData struct {
 
 type QaResultData struct {
 	Question         string
+	Top              int
+	TimeLimitMs      int64
 	SimilarQuestions []*SimilarQuestionData
 	Elapsed          time.Duration
+	IsTimeout        bool
 }

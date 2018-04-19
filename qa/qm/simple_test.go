@@ -52,7 +52,7 @@ func TestSimpleMatch(t *testing.T) {
 		for _, e := range out.resp.Errors {
 			t.Logf("    %v", e)
 		}
-		t.Logf("  is time out: %v", out.resp.IsTimeOut)
+		t.Logf("  is time out: %v", out.resp.IsTimeout)
 		t.Logf("  error: %v", out.err)
 	}
 }

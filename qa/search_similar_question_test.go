@@ -29,7 +29,7 @@ func TestSearchSimilarQuestions(t *testing.T) {
 		go func(number int) {
 			defer wg.Done()
 			t.Logf("%d start.", number)
-			outs[number].res, outs[number].err = SearchSimilarQuestions(
+			outs[number].res, _, outs[number].err = SearchSimilarQuestions(
 				questions[number], -1, -1)
 			t.Logf("%d done.", number)
 		}(i)
