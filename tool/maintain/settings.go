@@ -12,7 +12,7 @@ type Settings struct {
 	EnsureIndexes *EnsureIndexesSettings `json:"ensure_indexes"`
 }
 
-const SettingsFilename string = "../settings/maintain.json"
+const SettingsFilename string = "../settings/tool/maintain.json"
 
 var GlobalSettings Settings
 

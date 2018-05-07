@@ -82,21 +82,21 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		sqd := &SimilarQuestionData{
 			Title:      sq.Question.Title,
-			Content:    template.HTML(sq.Question.BodyHTML),
+			Content:    template.HTML(sq.Question.BodyHtml),
 			Score:      sq.Question.Score,
 			Link:       sq.Question.Link,
 			Similarity: sq.Similarity,
 		}
 		if aa != nil {
 			sqd.AcceptedAnswer = &SimilarQuestionAnswerData{
-				Content: template.HTML(aa.BodyHTML),
+				Content: template.HTML(aa.BodyHtml),
 				Score:   aa.Score,
 				Link:    aa.Link,
 			}
 		}
 		if ba != nil {
 			sqd.BestAnswer = &SimilarQuestionAnswerData{
-				Content: template.HTML(ba.BodyHTML),
+				Content: template.HTML(ba.BodyHtml),
 				Score:   ba.Score,
 				Link:    ba.Link,
 			}

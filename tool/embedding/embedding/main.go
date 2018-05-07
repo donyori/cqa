@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/donyori/cqa/data/db"
-	"github.com/donyori/cqa/embedding"
+	"github.com/donyori/cqa/tool/embedding"
 )
 
 func main() {

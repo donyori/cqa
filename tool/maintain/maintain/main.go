@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/donyori/cqa/data/db"
-	"github.com/donyori/cqa/data/maintain"
+	"github.com/donyori/cqa/tool/maintain"
 )
 
 const (

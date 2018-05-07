@@ -12,7 +12,7 @@ type Settings struct {
 	MinMillisecond  int `json:"min_millisecond"`
 }
 
-const SettingsFilename string = "../settings/embedding.json"
+const SettingsFilename string = "../settings/tool/embedding.json"
 
 var (
 	GlobalSettings Settings
