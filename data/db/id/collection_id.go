@@ -5,7 +5,8 @@ import "errors"
 type CollectionId int8
 
 const (
-	QuestionCollection CollectionId = iota
+	MetaCollection CollectionId = iota
+	QuestionCollection
 	TagCollection
 	QuestionLinguisticFeatureCollection
 	QuestionVectorCollection
@@ -13,6 +14,7 @@ const (
 
 var (
 	ValidCollectionIds = [...]CollectionId{
+		MetaCollection,
 		QuestionCollection,
 		TagCollection,
 		QuestionLinguisticFeatureCollection,
@@ -22,6 +24,7 @@ var (
 	ErrInvalidCollectionId error = errors.New("collection ID is invalid")
 
 	collectionIdStrings = [...]string{
+		"Meta",
 		"Question",
 		"Tag",
 		"Question Linguistic Feature",
@@ -30,7 +33,7 @@ var (
 )
 
 func (cid CollectionId) IsValid() bool {
-	return cid >= QuestionCollection && cid <= QuestionVectorCollection
+	return cid >= MetaCollection && cid <= QuestionVectorCollection
 }
 
 func (cid CollectionId) String() string {

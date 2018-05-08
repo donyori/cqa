@@ -32,7 +32,6 @@ type Accessor interface {
 
 var (
 	ErrNilAccessor error = errors.New("Accessor is nil")
-	ErrNilMaker    error = errors.New("model maker is nil")
 	ErrNilId       error = errors.New("ID is nil")
 	ErrEmptyIds    error = errors.New("ID slice is empty")
 	ErrIdsNotSlice error = errors.New("IDs must be a slice")
