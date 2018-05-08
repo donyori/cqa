@@ -75,7 +75,10 @@ func CrawlQuestions() error {
 	pageSize := se.GlobalSettings.MaxPageSize
 	backoffUnit := se.GlobalSettings.BackoffUnit
 	var count int = 0
-	defer log.Printf("*** Finally, crawled %d questions\n", count)
+	defer func() {
+		// It's different from "defer log.Printf(...)"
+		log.Printf("*** Finally, crawled %d questions\n", count)
+	}()
 	for _, tag := range tags {
 		if meta.Value.LastActivityDates == nil {
 			meta.Value.LastActivityDates = make(map[string]time.Time)
