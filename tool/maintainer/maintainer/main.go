@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/donyori/cqa/data/db"
-	"github.com/donyori/cqa/tool/maintain"
+	"github.com/donyori/cqa/tool/maintainer"
 )
 
 const (
@@ -23,9 +23,9 @@ func main() {
 	}
 	switch action {
 	case ActionEnsureIndexes:
-		maintain.EnsureIndexes()
+		maintainer.EnsureIndexes()
 	case ActionEnsureDataTypes:
-		maintain.EnsureDataTypes()
+		maintainer.EnsureDataTypes()
 	case "":
 		fmt.Printf("Please input the action to do. %s\n", actionUsage)
 	default:

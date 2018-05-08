@@ -1,4 +1,4 @@
-package maintain
+package maintainer
 
 import (
 	"github.com/donyori/cqa/common/json"
@@ -12,7 +12,7 @@ type Settings struct {
 	EnsureIndexes *EnsureIndexesSettings `json:"ensure_indexes"`
 }
 
-const SettingsFilename string = "../settings/tool/maintain.json"
+const SettingsFilename string = "../settings/tool/maintainer.json"
 
 var GlobalSettings Settings
 

@@ -1,4 +1,4 @@
-package maintain
+package maintainer
 
 import (
 	"log"
