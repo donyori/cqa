@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/donyori/cqa/common/cmp"
 	"github.com/donyori/cqa/common/conv"
 )
 
@@ -43,40 +44,40 @@ func Questions(page int, pageSize int, fromDate *time.Time, toDate *time.Time,
 	case QuestionsSortActivity:
 		fallthrough
 	case QuestionsSortCreation:
-		if min != nil {
+		if !cmp.IsNilDeeply(min) {
 			minInt64, err = conv.InterfaceToTimestamp(min)
 			if err != nil {
 				return nil, err
 			}
 		}
-		if max != nil {
+		if !cmp.IsNilDeeply(max) {
 			maxInt64, err = conv.InterfaceToTimestamp(max)
 			if err != nil {
 				return nil, err
 			}
 		}
 	case QuestionsSortVotes:
-		if min != nil {
+		if !cmp.IsNilDeeply(min) {
 			minInt64, err = conv.InterfaceToInt64(min)
 			if err != nil {
 				return nil, err
 			}
 		}
-		if max != nil {
+		if !cmp.IsNilDeeply(max) {
 			maxInt64, err = conv.InterfaceToInt64(max)
 			if err != nil {
 				return nil, err
 			}
 		}
 	default:
-		if min != nil || max != nil {
+		if !cmp.IsNilDeeply(min) || !cmp.IsNilDeeply(max) {
 			return nil, ErrMinOrMaxNotAllowed
 		}
 	}
-	if min != nil {
+	if !cmp.IsNilDeeply(min) {
 		r.SetQueryParam("min", strconv.FormatInt(minInt64, 10))
 	}
-	if max != nil {
+	if !cmp.IsNilDeeply(max) {
 		r.SetQueryParam("max", strconv.FormatInt(maxInt64, 10))
 	}
 	if tagged != "" {

@@ -10,9 +10,7 @@ type wrappedAccessor struct {
 	accessor generic.Accessor
 }
 
-var (
-	ErrResultTypeWrong error = errors.New("result type is wrong")
-)
+var ErrResultTypeWrong error = errors.New("result type is wrong")
 
 func (wa *wrappedAccessor) GetAccessor() generic.Accessor {
 	if wa == nil {

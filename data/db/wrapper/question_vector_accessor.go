@@ -12,10 +12,8 @@ type QuestionVectorAccessor struct {
 	wrappedAccessor
 }
 
-var (
-	ErrNilQuestionVectorAccessor error = errors.New(
-		"QuestionVectorAccessor is nil")
-)
+var ErrNilQuestionVectorAccessor error = errors.New(
+	"QuestionVectorAccessor is nil")
 
 func NewQuestionVectorAccessor(accessor generic.Accessor) (
 	qva *QuestionVectorAccessor, err error) {

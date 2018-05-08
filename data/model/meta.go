@@ -47,3 +47,35 @@ type MetaTime struct {
 	MetaKey `json:",inline" bson:",inline" cqadm:",inline"`
 	Value   *time.Time `json:"value" bson:"value"`
 }
+
+func NewMetaInterface() *MetaInterface {
+	return new(MetaInterface)
+}
+
+func NewMetaBool() *MetaBool {
+	return new(MetaBool)
+}
+
+func NewMetaInt64() *MetaInt64 {
+	return new(MetaInt64)
+}
+
+func NewMetaUint64() *MetaUint64 {
+	return new(MetaUint64)
+}
+
+func NewMetaFloat64() *MetaFloat64 {
+	return new(MetaFloat64)
+}
+
+func NewMetaComplex128() *MetaComplex128 {
+	return new(MetaComplex128)
+}
+
+func NewMetaString() *MetaString {
+	return new(MetaString)
+}
+
+func NewMetaTime() *MetaTime {
+	return new(MetaTime)
+}

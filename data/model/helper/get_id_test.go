@@ -32,3 +32,15 @@ func TestGetId(t *testing.T) {
 		}
 	}
 }
+
+func TestGetMongoDbIdNested(t *testing.T) {
+	meta := model.NewMetaInt64()
+	meta.Key = "testkey"
+	out, err := GetMongoDbId(meta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != meta.Key {
+		t.Fatalf("Wrong key: %q", out)
+	}
+}

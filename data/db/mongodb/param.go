@@ -4,9 +4,10 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/donyori/cqa/data/db/generic"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/donyori/cqa/data/db/generic"
 )
 
 type QueryParams struct {
@@ -34,6 +35,9 @@ func NewParamByIds(ids interface{}) (param bson.M, err error) {
 	v := reflect.ValueOf(ids)
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
+	}
+	if !v.IsValid() {
+		return nil, generic.ErrIdsNotSlice
 	}
 	if v.Kind() != reflect.Slice {
 		return nil, generic.ErrIdsNotSlice
@@ -64,6 +68,9 @@ func NewQueryParamsByIds(ids interface{}) (qp *QueryParams, err error) {
 	v := reflect.ValueOf(ids)
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
+	}
+	if !v.IsValid() {
+		return nil, generic.ErrIdsNotSlice
 	}
 	if v.Kind() != reflect.Slice {
 		return nil, generic.ErrIdsNotSlice
@@ -114,11 +121,22 @@ func ConvertToQueryParams(params interface{}) (
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
-	v = v.Addr()
-	params = v.Interface()
-	qp, ok := params.(*QueryParams)
-	if ok {
-		return qp, nil
+	if !v.IsValid() {
+		return nil, ErrNotQueryParams
+	}
+	if v.CanAddr() {
+		v = v.Addr()
+		params = v.Interface()
+		qp, ok := params.(*QueryParams)
+		if ok {
+			return qp, nil
+		}
+	} else {
+		params = v.Interface()
+		qpv, ok := params.(QueryParams)
+		if ok {
+			return &qpv, nil
+		}
 	}
 	return nil, ErrNotQueryParams
 }
