@@ -9,7 +9,8 @@ import (
 type NlpSource int8
 
 type Settings struct {
-	EmbeddingSource NlpSource `json:"embedding_source"`
+	EmbeddingSource           NlpSource `json:"embedding_source"`
+	EmbeddingWithTokensSource NlpSource `json:"embedding_with_tokens_source"`
 }
 
 const (
@@ -31,6 +32,7 @@ var (
 func init() {
 	// Default values:
 	GlobalSettings.EmbeddingSource = NlpSourceRestfulApi
+	GlobalSettings.EmbeddingWithTokensSource = NlpSourceRestfulApi
 
 	_, err := json.DecodeJsonFromFileIfExist(
 		SettingsFilename, &GlobalSettings)

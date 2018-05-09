@@ -67,6 +67,42 @@ func (mm *Maintainer) EnsureIndexes(cid id.CollectionId,
 			return err
 		}
 
+		creationDateIndex := mgo.Index{
+			Key:        []string{"creation_date"},
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(creationDateIndex)
+		if err != nil {
+			return err
+		}
+
+		lastActivityDateIndex := mgo.Index{
+			Key:        []string{"last_activity_date"},
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(lastActivityDateIndex)
+		if err != nil {
+			return err
+		}
+
+		lastEditDateIndex := mgo.Index{
+			Key:        []string{"last_edit_date"},
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(lastEditDateIndex)
+		if err != nil {
+			return err
+		}
+
+		lastCreateOrEditDateIndex := mgo.Index{
+			Key:        []string{"last_create_or_edit_date"},
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(lastCreateOrEditDateIndex)
+		if err != nil {
+			return err
+		}
+
 		tagsIndex := mgo.Index{
 			Key:        []string{"tags"},
 			Sparse:     true,

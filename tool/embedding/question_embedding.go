@@ -1,23 +1,28 @@
 package embedding
 
 import (
+	"errors"
 	"log"
+	"reflect"
 	"sync"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/donyori/cqa/data/db"
+	dbid "github.com/donyori/cqa/data/db/id"
 	"github.com/donyori/cqa/data/db/mongodb"
 	"github.com/donyori/cqa/data/db/wrapper"
 	"github.com/donyori/cqa/data/model"
 	"github.com/donyori/cqa/nlp"
 )
 
-func QuestionEmbedding() error {
+var ErrCannotGetMeta error = errors.New("cannot get crawler meta")
+
+func QuestionEmbedding() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
 	minMs := GlobalSettings.MinMillisecond
-	var err error
+	logStep := GlobalSettings.LogStep
 	defer func() {
 		if err != nil {
 			log.Println(err)
@@ -27,31 +32,87 @@ func QuestionEmbedding() error {
 		err = ErrNonPositiveGoroutineNumber
 		return err
 	}
-	log.Println("Start question embedding. goroutine number:",
-		goroutineNumber)
+	log.Println("Start question embedding. goroutine number:", goroutineNumber)
 	session, err := db.NewSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
-	log.Println("*** Succeed to connect to database.")
+	log.Println("*** Connect to database successfully.")
 	accessor, err := db.NewAccessor(session)
 	if err != nil {
 		return err
 	}
+	metaRes, err := accessor.FetchOneById(
+		dbid.MetaCollection, MetaKey, reflect.TypeOf(Meta{}))
+	if err != nil {
+		return err
+	}
+	var meta *Meta = nil
+	if metaRes != nil {
+		var ok bool
+		meta, ok = metaRes.(*Meta)
+		if !ok {
+			err = ErrCannotGetMeta
+			return err
+		}
+	}
+	hasMetaBefore := true
+	if meta == nil {
+		meta = NewMeta()
+		hasMetaBefore = false
+	}
+	if meta.Value == nil {
+		meta.Value = NewMetaValue()
+		hasMetaBefore = false
+	}
+	log.Println("*** Load meta successfully.")
+	defer func() {
+		if err != nil {
+			log.Println(err)
+			err = nil
+		}
+		meta.Value.QuestionLastEmbeddingTime = time.Now()
+		_, err = accessor.SaveOne(dbid.MetaCollection, nil, meta)
+	}()
 	qa, err := wrapper.NewQuestionAccessor(accessor)
 	if err != nil {
 		return err
 	}
 	params := mongodb.NewQueryParams()
-	params.Selector = bson.M{"_id": 1, "title": 1}
+	if hasMetaBefore {
+		params.Query = bson.M{"last_create_or_edit_date": bson.M{
+			"$gte": meta.Value.QuestionLastCreateOrEditDate,
+		}}
+	}
+	params.Selector = bson.M{
+		"_id": 1, "title": 1, "last_create_or_edit_date": 1,
+	}
+	params.SortFields = []string{"last_create_or_edit_date"}
 	quitC := make(chan struct{}, 1)
 	defer close(quitC)
 	outC, resC, err := qa.Scan(params, uint32(goroutineNumber), quitC)
 	if err != nil {
 		return err
 	}
+	writeMetaC := make(chan time.Time, goroutineNumber)
+	writeMetaDoneC := make(chan struct{})
 	log.Println("*** Start embedding.")
+	go func() {
+		defer close(writeMetaDoneC)
+		var lastT time.Time
+		isFirst := true
+		for t := range writeMetaC {
+			if !isFirst && !t.After(lastT) {
+				continue
+			}
+			isFirst = false
+			lastT = t
+			meta.Value.QuestionLastEmbeddingTime = time.Now()
+			meta.Value.QuestionLastCreateOrEditDate = lastT
+			accessor.SaveOne(dbid.MetaCollection, nil, meta) // Ignore error.
+		}
+	}()
 	var wg sync.WaitGroup
 	wg.Add(goroutineNumber)
 	for i := 0; i < goroutineNumber; i++ {
@@ -91,7 +152,7 @@ func QuestionEmbedding() error {
 			}
 			count := 0
 			for question := range outC {
-				if count%20 == 0 {
+				if count%logStep == 0 {
 					log.Printf("*** Goroutine %v has embedded %v questions.",
 						number, count)
 				}
@@ -102,16 +163,21 @@ func QuestionEmbedding() error {
 					timer.Reset(duration)
 					needDrainC = true
 				}
-				vector, e := nlp.Embedding(question.Title)
+				vector, tokenVectors, e :=
+					nlp.EmbeddingWithTokens(question.Title)
 				if e != nil {
 					return
 				}
 				qv := model.NewQuestionVector()
 				qv.QuestionId = question.QuestionId
 				qv.TitleVector = vector
-				_, e = qva.SaveOneById(qv.QuestionId, qv)
+				qv.TitleTokenVectors = tokenVectors
+				_, e = qva.SaveOne(nil, qv)
 				if e != nil {
 					return
+				}
+				if question.LastCreateOrEditDate != nil {
+					writeMetaC <- *question.LastCreateOrEditDate
 				}
 				if timer != nil {
 					<-timer.C
@@ -122,8 +188,10 @@ func QuestionEmbedding() error {
 		}(i)
 	}
 	wg.Wait()
+	close(writeMetaC)
 	quitC <- struct{}{}
 	err = <-resC
+	<-writeMetaDoneC
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,7 @@ func EnsureDataTypes() error {
 		return err
 	}
 	defer session.Close()
-	log.Println("*** Succeed to connect to database.")
+	log.Println("*** Connect to database successfully.")
 	maintainer, err := db.NewMaintainer(session)
 	if err != nil {
 		log.Println(err)

@@ -1,4 +1,4 @@
-package crawler
+package embedding
 
 import (
 	"time"
@@ -7,8 +7,8 @@ import (
 )
 
 type MetaValue struct {
-	LastCrawlTime     time.Time            `json:"last_crawl_time" bson:"last_crawl_time"`
-	LastActivityDates map[string]time.Time `json:"last_activity_dates" bson:"last_activity_dates"`
+	QuestionLastEmbeddingTime    time.Time `json:"question_last_embedding_time" bson:"question_last_embedding_time"`
+	QuestionLastCreateOrEditDate time.Time `json:"question_last_create_or_edit_date" bson:"question_last_create_or_edit_date"`
 }
 
 type Meta struct {
@@ -16,7 +16,7 @@ type Meta struct {
 	Value         *MetaValue `json:"value" bson:"value"`
 }
 
-const MetaKey string = "crawler"
+const MetaKey string = "embedding"
 
 func NewMetaValue() *MetaValue {
 	return new(MetaValue)

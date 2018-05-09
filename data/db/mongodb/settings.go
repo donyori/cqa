@@ -33,7 +33,7 @@ func init() {
 		id.TagCollection:      "tag.v1",
 		id.QuestionLinguisticFeatureCollection: "" +
 			"question_linguistic_feature.v1",
-		id.QuestionVectorCollection: "question_vector.v1",
+		id.QuestionVectorCollection: "question_vector.v2",
 	}
 	GlobalSettings.PoolLimit = 1024
 

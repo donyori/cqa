@@ -18,11 +18,10 @@ var (
 	ErrNoQuotaRemaining error = errors.New("quota remaining is zero")
 )
 
-func CrawlQuestions() error {
+func CrawlQuestions() (err error) {
 	defer log.Println("Crawling questions finish.")
 	tags := GlobalSettings.CrawlTags
 	logStep := GlobalSettings.LogStep
-	var err error
 	defer func() {
 		if err != nil {
 			log.Println(err)
@@ -34,6 +33,7 @@ func CrawlQuestions() error {
 		return err
 	}
 	defer sess.Close()
+	log.Println("*** Connect to database successfully.")
 	accessor, err := db.NewAccessor(sess)
 	if err != nil {
 		return err
@@ -77,9 +77,13 @@ func CrawlQuestions() error {
 	var count int = 0
 	defer func() {
 		// It's different from "defer log.Printf(...)"
-		log.Printf("*** Finally, crawled %d questions\n", count)
+		log.Printf("*** Finally, crawled %d questions.\n", count)
 	}()
 	for _, tag := range tags {
+		log.Printf(
+			"*** Start to crawl questions tagged %q."+
+				" Already crawled %d questions.\n",
+			tag, count)
 		if meta.Value.LastActivityDates == nil {
 			meta.Value.LastActivityDates = make(map[string]time.Time)
 		}
@@ -133,7 +137,11 @@ func CrawlQuestions() error {
 				return err
 			}
 			if res.Backoff > 0 {
-				time.Sleep(backoffUnit * time.Duration(res.Backoff))
+				sleepDuration := backoffUnit * time.Duration(res.Backoff)
+				log.Printf("*** Backoff = %d, sleep %v.\n",
+					res.Backoff, sleepDuration)
+				time.Sleep(sleepDuration)
+				log.Println("*** Go on.")
 			}
 			page++
 		}

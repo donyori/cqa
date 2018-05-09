@@ -107,6 +107,11 @@ func (a *Answer) ToDataModel() *model.Answer {
 	} else {
 		res.LastEditDate = nil
 	}
+	if res.LastEditDate == nil {
+		res.LastCreateOrEditDate = res.CreationDate
+	} else {
+		res.LastCreateOrEditDate = res.LastEditDate
+	}
 	if a.Comments != nil {
 		res.Comments = make([]*model.Comment, 0, len(a.Comments))
 		for _, c := range a.Comments {
@@ -142,6 +147,11 @@ func (q *Question) ToDataModel() *model.Question {
 		res.LastEditDate = &led
 	} else {
 		res.LastEditDate = nil
+	}
+	if res.LastEditDate == nil {
+		res.LastCreateOrEditDate = res.CreationDate
+	} else {
+		res.LastCreateOrEditDate = res.LastEditDate
 	}
 	if q.Comments != nil {
 		res.Comments = make([]*model.Comment, 0, len(q.Comments))
