@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/donyori/cqa/data/db"
+	"github.com/donyori/cqa/data/db/mongodb"
 	"github.com/donyori/cqa/data/db/wrapper"
 	"github.com/donyori/cqa/data/model"
 )
@@ -98,15 +101,14 @@ func (p *Provider) bufferQuestionVectors() error {
 	if err != nil {
 		return err
 	}
-	outC, resC, err := qva.Scan(nil, 4, nil)
+	params := mongodb.NewQueryParams()
+	params.Selector = bson.M{"_id": 1, "title_vector": 1}
+	qvs, err := qva.FetchAll(params)
 	if err != nil {
 		return err
 	}
-	p.qvBuf = nil
-	for qv := range outC {
-		p.qvBuf = append(p.qvBuf, qv)
-	}
-	return <-resC
+	p.qvBuf = qvs
+	return nil
 }
 
 func (p *Provider) provideQuestionVectorFromBuffer(
@@ -143,9 +145,11 @@ func (p *Provider) provideQuestionVectorFromDb(
 	}
 	sess := qva.GetAccessor().GetSession()
 	defer sess.Close()
+	params := mongodb.NewQueryParams()
+	params.Selector = bson.M{"_id": 1, "title_vector": 1}
 	qvqc := make(chan struct{})
 	defer close(qvqc)
-	qvc, _, err := qva.Scan(nil, uint32(cap(outC)), qvqc)
+	qvc, rc, err := qva.Scan(params, uint32(cap(outC)), qvqc)
 	if err != nil {
 		panic(err)
 	}
@@ -154,6 +158,7 @@ func (p *Provider) provideQuestionVectorFromDb(
 		select {
 		case <-quitC:
 			isDone = true
+			return
 		case qv, ok := <-qvc:
 			if ok {
 				outC <- qv
@@ -161,5 +166,9 @@ func (p *Provider) provideQuestionVectorFromDb(
 				isDone = true
 			}
 		}
+	}
+	err = <-rc
+	if err != nil {
+		panic(err)
 	}
 }
