@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -22,7 +23,7 @@ type tagCount struct {
 
 func TagCount() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
-	outputFilename := GlobalSettings.OutputFilename
+	outputDirectory := GlobalSettings.OutputDirectory
 	logStep := GlobalSettings.LogStep
 	defer func() {
 		if err != nil {
@@ -33,6 +34,8 @@ func TagCount() (err error) {
 		err = ErrNonPositiveGoroutineNumber
 		return err
 	}
+	outputFilenameByTag := filepath.Join(outputDirectory, "sort_by_tag.csv")
+	outputFilenameByCount := filepath.Join(outputDirectory, "sort_by_count.csv")
 	log.Println("Start tag count. goroutine number:", goroutineNumber)
 	sess, err := db.NewSession()
 	if err != nil {
@@ -104,20 +107,43 @@ func TagCount() (err error) {
 	for c := range countC {
 		counter[c.Tag] += c.Count
 	}
-	tags := make([]string, 0, len(counter))
-	for tag := range counter {
-		tags = append(tags, tag)
+	tcs := make([]*tagCount, 0, len(counter))
+	for t, c := range counter {
+		tcs = append(tcs, &tagCount{Tag: t, Count: c})
 	}
-	sort.Strings(tags)
-	outputFile, err := os.Create(outputFilename)
+	lessByTag := func(i, j int) bool {
+		return tcs[i].Tag < tcs[j].Tag
+	}
+	lessByCount := func(i, j int) bool {
+		if tcs[i].Count == tcs[j].Count {
+			return tcs[i].Tag < tcs[j].Tag
+		}
+		return tcs[i].Count > tcs[j].Count
+	}
+	sort.Slice(tcs, lessByTag)
+	outputFileByTag, err := os.Create(outputFilenameByTag)
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close() // Ignore error.
-	csvWriter := csv.NewWriter(outputFile)
-	defer csvWriter.Flush()
-	for _, tag := range tags {
-		err = csvWriter.Write([]string{tag, strconv.Itoa(counter[tag])})
+	defer outputFileByTag.Close() // Ignore error.
+	csvWriterByTag := csv.NewWriter(outputFileByTag)
+	defer csvWriterByTag.Flush()
+	for _, tc := range tcs {
+		err = csvWriterByTag.Write([]string{tc.Tag, strconv.Itoa(tc.Count)})
+		if err != nil {
+			return err
+		}
+	}
+	sort.Slice(tcs, lessByCount)
+	outputFileByCount, err := os.Create(outputFilenameByCount)
+	if err != nil {
+		return err
+	}
+	defer outputFileByCount.Close() // Ignore error.
+	csvWriterByCount := csv.NewWriter(outputFileByCount)
+	defer csvWriterByCount.Flush()
+	for _, tc := range tcs {
+		err = csvWriterByCount.Write([]string{tc.Tag, strconv.Itoa(tc.Count)})
 		if err != nil {
 			return err
 		}

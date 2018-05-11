@@ -9,7 +9,7 @@ import (
 
 type Settings struct {
 	GoroutineNumber int    `json:"goroutine_number"`
-	OutputFilename  string `json:"output_filename"`
+	OutputDirectory string `json:"output_directory"`
 	LogStep         int    `json:"log_step"`
 }
 
@@ -25,7 +25,7 @@ var (
 func init() {
 	// Default values:
 	GlobalSettings.GoroutineNumber = runtime.NumCPU()
-	GlobalSettings.OutputFilename = "../out/tagcount/result.csv"
+	GlobalSettings.OutputDirectory = "../out/tagcount"
 	GlobalSettings.LogStep = 1000
 
 	_, err := json.DecodeJsonFromFileIfExist(

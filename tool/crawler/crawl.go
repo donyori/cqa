@@ -71,7 +71,6 @@ func CrawlQuestions() (err error) {
 		meta.Value.LastCrawlTime = time.Now()
 		_, err = accessor.SaveOne(dbid.MetaCollection, nil, meta)
 	}()
-	page := se.GlobalSettings.StartPage
 	pageSize := se.GlobalSettings.MaxPageSize
 	backoffUnit := se.GlobalSettings.BackoffUnit
 	var count int = 0
@@ -84,13 +83,15 @@ func CrawlQuestions() (err error) {
 			"*** Start to crawl questions tagged %q."+
 				" Already crawled %d questions.\n",
 			tag, count)
+		page := se.GlobalSettings.StartPage
 		if meta.Value.LastActivityDates == nil {
 			meta.Value.LastActivityDates = make(map[string]time.Time)
 		}
 		var min *time.Time = nil
 		lastDate, ok := meta.Value.LastActivityDates[tag]
 		if ok {
-			min = &lastDate
+			minTime := lastDate
+			min = &minTime
 		}
 		hasMore := true
 		for hasMore {
@@ -129,8 +130,8 @@ func CrawlQuestions() (err error) {
 			}
 			if page%logStep == 0 {
 				log.Printf(
-					"*** Crawled %d questions, quota: remaining = %d, max = %d\n",
-					count, res.QuotaRemaining, res.QuotaMax)
+					"*** Crawled %d questions, last activity date: %v, quota: remaining = %d, max = %d\n",
+					count, lastDate, res.QuotaRemaining, res.QuotaMax)
 			}
 			if res.QuotaRemaining == 0 {
 				err = ErrNoQuotaRemaining

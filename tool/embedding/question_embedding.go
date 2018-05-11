@@ -22,6 +22,7 @@ var ErrCannotGetMeta error = errors.New("cannot get crawler meta")
 func QuestionEmbedding() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
 	minMs := GlobalSettings.MinMillisecond
+	enableQuestionBuffer := GlobalSettings.EnableQuestionBuffer
 	logStep := GlobalSettings.LogStep
 	defer func() {
 		if err != nil {
@@ -89,11 +90,41 @@ func QuestionEmbedding() (err error) {
 		"_id": 1, "title": 1, "last_create_or_edit_date": 1,
 	}
 	params.SortFields = []string{"last_create_or_edit_date"}
-	quitC := make(chan struct{}, 1)
+	var outC <-chan *model.Question
+	var resC <-chan error
+	quitC := make(chan struct{})
 	defer close(quitC)
-	outC, resC, err := qa.Scan(params, uint32(goroutineNumber), quitC)
-	if err != nil {
-		return err
+	if enableQuestionBuffer {
+		log.Println("*** Start to buffer questions.")
+		var qs []*model.Question
+		qs, err = qa.FetchAll(params)
+		if err != nil {
+			return err
+		}
+		log.Println("*** Buffer questions successfully.")
+		outChannel := make(chan *model.Question, uint32(goroutineNumber))
+		resChannel := make(chan error, 1)
+		outC = outChannel
+		resC = resChannel
+		go func() {
+			defer close(resChannel)
+			defer close(outChannel)
+			for _, q := range qs {
+				select {
+				case <-quitC:
+					return
+				default:
+					outChannel <- q
+				}
+			}
+			resChannel <- nil
+		}()
+	} else {
+		log.Println("*** Disable to buffer questions.")
+		outC, resC, err = qa.Scan(params, uint32(goroutineNumber), quitC)
+		if err != nil {
+			return err
+		}
 	}
 	writeMetaC := make(chan time.Time, goroutineNumber)
 	writeMetaDoneC := make(chan struct{})
@@ -156,6 +187,14 @@ func QuestionEmbedding() (err error) {
 					log.Printf("*** Goroutine %v has embedded %v questions.",
 						number, count)
 				}
+				var isExisted bool
+				isExisted, e = qva.IsExistedById(question.QuestionId)
+				if e != nil {
+					return
+				}
+				if isExisted {
+					continue
+				}
 				if timer != nil {
 					if !timer.Stop() && needDrainC {
 						<-timer.C
@@ -163,7 +202,9 @@ func QuestionEmbedding() (err error) {
 					timer.Reset(duration)
 					needDrainC = true
 				}
-				vector, tokenVectors, e :=
+				var vector *model.Vector32
+				var tokenVectors []*model.TokenVector
+				vector, tokenVectors, e =
 					nlp.EmbeddingWithTokens(question.Title)
 				if e != nil {
 					return
@@ -189,7 +230,6 @@ func QuestionEmbedding() (err error) {
 	}
 	wg.Wait()
 	close(writeMetaC)
-	quitC <- struct{}{}
 	err = <-resC
 	<-writeMetaDoneC
 	if err != nil {
