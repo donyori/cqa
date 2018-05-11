@@ -10,6 +10,8 @@ import (
 type Accessor interface {
 	WithSession
 
+	IsExisted(cid dbid.CollectionId, params interface{}) (res bool, err error)
+	IsExistedById(cid dbid.CollectionId, id interface{}) (res bool, err error)
 	FetchOne(cid dbid.CollectionId, params interface{},
 		modelType reflect.Type) (res interface{}, err error)
 	FetchOneById(cid dbid.CollectionId, id interface{},
@@ -24,6 +26,7 @@ type Accessor interface {
 	ScanByIds(cid dbid.CollectionId, ids interface{}, bufferSize uint32,
 		quitC <-chan struct{}, modelType reflect.Type) (
 		outC <-chan interface{}, resC <-chan error, err error)
+	Count(cid dbid.CollectionId, params interface{}) (res int64, err error)
 	SaveOne(cid dbid.CollectionId, selector interface{}, model interface{}) (
 		isNew bool, err error)
 	SaveOneById(cid dbid.CollectionId, id interface{}, model interface{}) (

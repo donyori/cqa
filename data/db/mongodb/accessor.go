@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/donyori/cqa/data/db/generic"
 	dbhelper "github.com/donyori/cqa/data/db/helper"
@@ -28,6 +29,38 @@ func NewAccessor(session generic.Session) (
 		}
 	}
 	return accessor, nil
+}
+
+func (a *Accessor) IsExisted(cid dbid.CollectionId, params interface{}) (
+	res bool, err error) {
+	if a == nil {
+		return false, ErrNilAccessor
+	}
+	qp, err := ConvertToQueryParams(params)
+	if err != nil {
+		return false, err
+	}
+	if qp == nil {
+		qp = NewQueryParams()
+	}
+	qp.Limit = 1
+	n, err := a.Count(cid, qp)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+func (a *Accessor) IsExistedById(cid dbid.CollectionId, id interface{}) (
+	res bool, err error) {
+	if a == nil {
+		return false, ErrNilAccessor
+	}
+	params, err := NewQueryParamsById(id)
+	if err != nil {
+		return false, err
+	}
+	return a.IsExisted(cid, params)
 }
 
 func (a *Accessor) FetchOne(cid dbid.CollectionId, params interface{},
@@ -178,6 +211,32 @@ func (a *Accessor) ScanByIds(cid dbid.CollectionId, ids interface{},
 		return nil, nil, err
 	}
 	return a.Scan(cid, params, bufferSize, quitC, modelType)
+}
+
+func (a *Accessor) Count(cid dbid.CollectionId, params interface{}) (
+	res int64, err error) {
+	if a == nil {
+		return 0, ErrNilAccessor
+	}
+	qp, err := ConvertToQueryParams(params)
+	if err != nil {
+		return 0, err
+	}
+	if qp == nil {
+		qp = NewQueryParams()
+	}
+	qp.Selector = bson.M{"_id": 1}
+	session, c, err := a.aquireSessionAndCollection(cid)
+	if err != nil {
+		return 0, err
+	}
+	defer session.Release()
+	q := qp.MakeQuery(c)
+	n, err := q.Count()
+	if err != nil {
+		return 0, err
+	}
+	return int64(n), nil
 }
 
 func (a *Accessor) SaveOne(cid dbid.CollectionId, selector interface{},

@@ -24,6 +24,21 @@ func NewQuestionAccessor(accessor generic.Accessor) (
 	}, nil
 }
 
+func (qa *QuestionAccessor) IsExisted(params interface{}) (
+	res bool, err error) {
+	if qa == nil {
+		return false, ErrNilQuestionAccessor
+	}
+	return qa.accessor.IsExisted(dbid.QuestionCollection, params)
+}
+
+func (qa *QuestionAccessor) IsExistedById(id model.Id) (res bool, err error) {
+	if qa == nil {
+		return false, ErrNilQuestionAccessor
+	}
+	return qa.accessor.IsExistedById(dbid.QuestionCollection, id)
+}
+
 func (qa *QuestionAccessor) FetchOne(params interface{}) (
 	question *model.Question, err error) {
 	if qa == nil {
@@ -104,6 +119,13 @@ func (qa *QuestionAccessor) ScanByIds(ids []model.Id, bufferSize uint32,
 		return nil, nil, ErrNilQuestionAccessor
 	}
 	return qa.scan(ids, bufferSize, quitC, true)
+}
+
+func (qa *QuestionAccessor) Count(params interface{}) (res int64, err error) {
+	if qa == nil {
+		return 0, ErrNilQuestionAccessor
+	}
+	return qa.accessor.Count(dbid.QuestionCollection, params)
 }
 
 func (qa *QuestionAccessor) SaveOne(selector interface{},

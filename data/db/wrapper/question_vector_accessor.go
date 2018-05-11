@@ -25,6 +25,22 @@ func NewQuestionVectorAccessor(accessor generic.Accessor) (
 	}, nil
 }
 
+func (qva *QuestionVectorAccessor) IsExisted(params interface{}) (
+	res bool, err error) {
+	if qva == nil {
+		return false, ErrNilQuestionVectorAccessor
+	}
+	return qva.accessor.IsExisted(dbid.QuestionVectorCollection, params)
+}
+
+func (qva *QuestionVectorAccessor) IsExistedById(id model.Id) (
+	res bool, err error) {
+	if qva == nil {
+		return false, ErrNilQuestionVectorAccessor
+	}
+	return qva.accessor.IsExistedById(dbid.QuestionVectorCollection, id)
+}
+
 func (qva *QuestionVectorAccessor) FetchOne(params interface{}) (
 	qv *model.QuestionVector, err error) {
 	if qva == nil {
@@ -109,6 +125,14 @@ func (qva *QuestionVectorAccessor) ScanByIds(ids []model.Id, bufferSize uint32,
 		return nil, nil, ErrNilQuestionVectorAccessor
 	}
 	return qva.scan(ids, bufferSize, quitC, true)
+}
+
+func (qva *QuestionVectorAccessor) Count(params interface{}) (
+	res int64, err error) {
+	if qva == nil {
+		return 0, ErrNilQuestionVectorAccessor
+	}
+	return qva.accessor.Count(dbid.QuestionVectorCollection, params)
 }
 
 func (qva *QuestionVectorAccessor) SaveOne(selector interface{},
