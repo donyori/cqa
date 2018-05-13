@@ -1,4 +1,4 @@
-package tagcount
+package titlelen
 
 import (
 	"encoding/csv"
@@ -16,12 +16,12 @@ import (
 	"github.com/donyori/cqa/data/db/wrapper"
 )
 
-type tagCount struct {
-	Tag   string
-	Count int
+type lenCount struct {
+	Length int
+	Count  int
 }
 
-func TagCount() (err error) {
+func TitleLengthCount() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
 	outputDirectory := GlobalSettings.OutputDirectory
 	logStep := GlobalSettings.LogStep
@@ -34,9 +34,11 @@ func TagCount() (err error) {
 		err = ErrNonPositiveGoroutineNumber
 		return err
 	}
-	outputFilenameByTag := filepath.Join(outputDirectory, "sort_by_tag.csv")
-	outputFilenameByCount := filepath.Join(outputDirectory, "sort_by_count.csv")
-	log.Println("Start tag count. goroutine number:", goroutineNumber)
+	outputFilenameByLen := filepath.Join(
+		outputDirectory, "title_length_count_sort_by_len.csv")
+	outputFilenameByCount := filepath.Join(
+		outputDirectory, "title_length_count_sort_by_count.csv")
+	log.Println("Start title length count. goroutine number:", goroutineNumber)
 	sess, err := db.NewSession()
 	if err != nil {
 		return err
@@ -47,19 +49,19 @@ func TagCount() (err error) {
 	if err != nil {
 		return err
 	}
-	qa, err := wrapper.NewQuestionAccessor(accessor)
+	qva, err := wrapper.NewQuestionVectorAccessor(accessor)
 	if err != nil {
 		return err
 	}
 	params := mongodb.NewQueryParams()
-	params.Selector = bson.M{"tags": 1}
+	params.Selector = bson.M{"title_token_vectors": 1}
 	quitC := make(chan struct{}, 1)
 	defer close(quitC)
-	outC, resC, err := qa.Scan(params, uint32(goroutineNumber), quitC)
+	outC, resC, err := qva.Scan(params, uint32(goroutineNumber), quitC)
 	if err != nil {
 		return err
 	}
-	countC := make(chan *tagCount, goroutineNumber)
+	countC := make(chan *lenCount, goroutineNumber)
 	log.Println("*** Start to count.")
 	var wg sync.WaitGroup
 	wg.Add(goroutineNumber)
@@ -79,62 +81,64 @@ func TagCount() (err error) {
 					log.Printf("*** Error occurs on %v: %v\n", number, e)
 				}
 			}()
-			counter := make(map[string]int)
+			counter := make(map[int]int)
 			count := 0
-			for q := range outC {
+			for qv := range outC {
 				if count%logStep == 0 {
 					log.Printf("*** Goroutine %v has counted %d questions.",
 						number, count)
 				}
-				for _, tag := range q.Tags {
-					counter[tag]++
-				}
+				length := len(qv.TitleTokenVectors)
+				counter[length]++
 				count++
 			}
-			for tag, c := range counter {
+			for length, c := range counter {
 				if c <= 0 {
 					continue
 				}
-				countCell := &tagCount{
-					Tag:   tag,
-					Count: c,
+				countCell := &lenCount{
+					Length: length,
+					Count:  c,
 				}
 				countC <- countCell
 			}
 		}(i)
 	}
-	counter := make(map[string]int)
+	counter := make(map[int]int)
 	for c := range countC {
-		counter[c.Tag] += c.Count
+		counter[c.Length] += c.Count
 	}
-	tcs := make([]*tagCount, 0, len(counter))
-	for t, c := range counter {
-		tcs = append(tcs, &tagCount{Tag: t, Count: c})
+	lcs := make([]*lenCount, 0, len(counter))
+	for l, c := range counter {
+		lcs = append(lcs, &lenCount{Length: l, Count: c})
 	}
-	lessByTag := func(i, j int) bool {
-		return tcs[i].Tag < tcs[j].Tag
+	lessByLen := func(i, j int) bool {
+		return lcs[i].Length < lcs[j].Length
 	}
 	lessByCount := func(i, j int) bool {
-		if tcs[i].Count == tcs[j].Count {
-			return tcs[i].Tag < tcs[j].Tag
+		if lcs[i].Count == lcs[j].Count {
+			return lcs[i].Length < lcs[j].Length
 		}
-		return tcs[i].Count > tcs[j].Count
+		return lcs[i].Count > lcs[j].Count
 	}
-	sort.Slice(tcs, lessByTag)
-	outputFileByTag, err := os.Create(outputFilenameByTag)
+	sort.Slice(lcs, lessByLen)
+	outputFileByLen, err := os.Create(outputFilenameByLen)
 	if err != nil {
 		return err
 	}
-	defer outputFileByTag.Close() // Ignore error.
-	csvWriterByTag := csv.NewWriter(outputFileByTag)
-	defer csvWriterByTag.Flush()
-	for _, tc := range tcs {
-		err = csvWriterByTag.Write([]string{tc.Tag, strconv.Itoa(tc.Count)})
+	defer outputFileByLen.Close() // Ignore error.
+	csvWriterByLen := csv.NewWriter(outputFileByLen)
+	defer csvWriterByLen.Flush()
+	for _, lc := range lcs {
+		err = csvWriterByLen.Write([]string{
+			strconv.Itoa(lc.Length),
+			strconv.Itoa(lc.Count),
+		})
 		if err != nil {
 			return err
 		}
 	}
-	sort.Slice(tcs, lessByCount)
+	sort.Slice(lcs, lessByCount)
 	outputFileByCount, err := os.Create(outputFilenameByCount)
 	if err != nil {
 		return err
@@ -142,8 +146,11 @@ func TagCount() (err error) {
 	defer outputFileByCount.Close() // Ignore error.
 	csvWriterByCount := csv.NewWriter(outputFileByCount)
 	defer csvWriterByCount.Flush()
-	for _, tc := range tcs {
-		err = csvWriterByCount.Write([]string{tc.Tag, strconv.Itoa(tc.Count)})
+	for _, lc := range lcs {
+		err = csvWriterByCount.Write([]string{
+			strconv.Itoa(lc.Length),
+			strconv.Itoa(lc.Count),
+		})
 		if err != nil {
 			return err
 		}
