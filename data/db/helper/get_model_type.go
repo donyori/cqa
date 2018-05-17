@@ -23,6 +23,8 @@ func GetModelTypeByCollectionId(cid id.CollectionId) (
 		modelType = reflect.TypeOf(model.Question{})
 	case id.QuestionVectorCollection:
 		modelType = reflect.TypeOf(model.QuestionVector{})
+	case id.QuestionClassificationCollection:
+		modelType = reflect.TypeOf(model.QuestionClassification{})
 	default:
 		err = ErrNoCorrespondingModelType
 	}

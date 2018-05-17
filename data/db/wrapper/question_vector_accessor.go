@@ -51,6 +51,9 @@ func (qva *QuestionVectorAccessor) FetchOne(params interface{}) (
 	if err != nil {
 		return nil, err
 	}
+	if res == nil {
+		return nil, nil
+	}
 	qv, ok := res.(*model.QuestionVector)
 	if !ok {
 		return nil, ErrResultTypeWrong
@@ -67,6 +70,9 @@ func (qva *QuestionVectorAccessor) FetchOneById(id model.Id) (
 		dbid.QuestionVectorCollection, id, nil)
 	if err != nil {
 		return nil, err
+	}
+	if res == nil {
+		return nil, nil
 	}
 	qv, ok := res.(*model.QuestionVector)
 	if !ok {
@@ -85,6 +91,9 @@ func (qva *QuestionVectorAccessor) FetchAll(params interface{}) (
 	if err != nil {
 		return nil, err
 	}
+	if res == nil {
+		return nil, nil
+	}
 	qvs, ok := res.([]*model.QuestionVector)
 	if !ok {
 		return nil, ErrResultTypeWrong
@@ -101,6 +110,9 @@ func (qva *QuestionVectorAccessor) FetchAllByIds(ids []model.Id) (
 		dbid.QuestionVectorCollection, ids, nil)
 	if err != nil {
 		return nil, err
+	}
+	if res == nil {
+		return nil, nil
 	}
 	qvs, ok := res.([]*model.QuestionVector)
 	if !ok {

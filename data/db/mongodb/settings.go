@@ -28,12 +28,10 @@ func init() {
 	GlobalSettings.Url = "127.0.0.1:27017"
 	GlobalSettings.DbName = "cqa"
 	GlobalSettings.CNames = map[id.CollectionId]string{
-		id.MetaCollection:     "meta.v1",
-		id.QuestionCollection: "question.v2",
-		id.TagCollection:      "tag.v1",
-		id.QuestionLinguisticFeatureCollection: "" +
-			"question_linguistic_feature.v1",
-		id.QuestionVectorCollection: "question_vector.v2",
+		id.MetaCollection:                   "meta.v1",
+		id.QuestionCollection:               "question.v2",
+		id.QuestionVectorCollection:         "question_vector.v2",
+		id.QuestionClassificationCollection: "question_classification.v2",
 	}
 	GlobalSettings.PoolLimit = 1024
 

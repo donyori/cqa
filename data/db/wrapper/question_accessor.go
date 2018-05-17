@@ -48,6 +48,9 @@ func (qa *QuestionAccessor) FetchOne(params interface{}) (
 	if err != nil {
 		return nil, err
 	}
+	if res == nil {
+		return nil, nil
+	}
 	question, ok := res.(*model.Question)
 	if !ok {
 		return nil, ErrResultTypeWrong
@@ -63,6 +66,9 @@ func (qa *QuestionAccessor) FetchOneById(id model.Id) (
 	res, err := qa.accessor.FetchOneById(dbid.QuestionCollection, id, nil)
 	if err != nil {
 		return nil, err
+	}
+	if res == nil {
+		return nil, nil
 	}
 	question, ok := res.(*model.Question)
 	if !ok {
@@ -80,6 +86,9 @@ func (qa *QuestionAccessor) FetchAll(params interface{}) (
 	if err != nil {
 		return nil, err
 	}
+	if res == nil {
+		return nil, nil
+	}
 	questions, ok := res.([]*model.Question)
 	if !ok {
 		return nil, ErrResultTypeWrong
@@ -95,6 +104,9 @@ func (qa *QuestionAccessor) FetchAllByIds(ids []model.Id) (
 	res, err := qa.accessor.FetchAllByIds(dbid.QuestionCollection, ids, nil)
 	if err != nil {
 		return nil, err
+	}
+	if res == nil {
+		return nil, nil
 	}
 	questions, ok := res.([]*model.Question)
 	if !ok {
