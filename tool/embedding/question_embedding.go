@@ -23,6 +23,7 @@ func QuestionEmbedding() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
 	minMs := GlobalSettings.MinMillisecond
 	enableQuestionBuffer := GlobalSettings.EnableQuestionBuffer
+	skipEmbeddedQuestions := GlobalSettings.SkipEmbeddedQuestions
 	logStep := GlobalSettings.LogStep
 	defer func() {
 		if err != nil {
@@ -184,16 +185,18 @@ func QuestionEmbedding() (err error) {
 			count := 0
 			for question := range outC {
 				if count%logStep == 0 {
-					log.Printf("*** Goroutine %v has embedded %v questions.",
+					log.Printf("*** Goroutine %v has embedded %d questions.",
 						number, count)
 				}
-				var isExisted bool
-				isExisted, e = qva.IsExistedById(question.QuestionId)
-				if e != nil {
-					return
-				}
-				if isExisted {
-					continue
+				if skipEmbeddedQuestions {
+					var isExisted bool
+					isExisted, e = qva.IsExistedById(question.QuestionId)
+					if e != nil {
+						return
+					}
+					if isExisted {
+						continue
+					}
 				}
 				if timer != nil {
 					if !timer.Stop() && needDrainC {

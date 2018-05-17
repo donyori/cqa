@@ -9,7 +9,7 @@ type Settings struct {
 	LogStep   int      `json:"log_step"`
 }
 
-const SettingsFilename string = "../settings/crawler.json"
+const SettingsFilename string = "../settings/tool/crawler.json"
 
 var GlobalSettings Settings
 

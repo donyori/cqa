@@ -60,7 +60,7 @@ func TagCount() (err error) {
 		return err
 	}
 	countC := make(chan *tagCount, goroutineNumber)
-	log.Println("*** Start to count.")
+	log.Println("*** Start counting.")
 	var wg sync.WaitGroup
 	wg.Add(goroutineNumber)
 	go func() {
