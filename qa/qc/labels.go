@@ -2,6 +2,7 @@ package qc
 
 import (
 	"errors"
+	"strings"
 )
 
 type Label int8
@@ -28,6 +29,8 @@ const (
 	MemoryLabel
 	IdeLabel
 	OtherLanguageLabel
+
+	UnknownLabel Label = -1
 )
 
 var (
@@ -82,20 +85,38 @@ var (
 	}
 )
 
+func ParseLabel(labelString string, doesIgnoreCase bool) Label {
+	if doesIgnoreCase {
+		labelString = strings.ToLower(labelString)
+	}
+	if labelString == "" || labelString == "invalid" {
+		return -2
+	}
+	if labelString == "unknown" {
+		return -1
+	}
+	for i, s := range labelStrings {
+		if labelString == s {
+			return Label(i)
+		}
+	}
+	return -1
+}
+
 func (l Label) IsKnown() bool {
 	return l >= ArrayLabel && l <= OtherLanguageLabel
 }
 
 func (l Label) IsValid() bool {
-	return l.IsKnown()
+	return l.IsKnown() || l == UnknownLabel
 }
 
 func (l Label) String() string {
-	if !l.IsKnown() {
-		return "unknown"
-	}
 	if !l.IsValid() {
 		return "invalid"
+	}
+	if !l.IsKnown() {
+		return "unknown"
 	}
 	return labelStrings[l]
 }

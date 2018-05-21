@@ -140,8 +140,10 @@ func getLabelsByTagsUnsorted(tags []string) []Label {
 		}
 	}
 	labels := make([]Label, 0, len(labelsSet))
-	for label := range labelsSet {
-		labels = append(labels, label)
+	for label, ok := range labelsSet {
+		if ok {
+			labels = append(labels, label)
+		}
 	}
 	return labels
 }
