@@ -17,6 +17,7 @@ type QueryParams struct {
 	Skip       int
 	Limit      int
 	SortFields []string
+	Hint       []string
 }
 
 var ErrNotQueryParams error = errors.New("parameter is NOT QueryParams")
@@ -108,6 +109,9 @@ func (params *QueryParams) MakeQuery(c *mgo.Collection) *mgo.Query {
 	}
 	if len(params.SortFields) > 0 {
 		q = q.Sort(params.SortFields...)
+	}
+	if len(params.Hint) > 0 {
+		q = q.Hint(params.Hint...)
 	}
 	return q
 }
