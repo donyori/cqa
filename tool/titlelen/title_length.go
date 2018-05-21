@@ -69,6 +69,9 @@ func TitleLengthCount() (err error) {
 		defer close(countC)
 		defer func() {
 			quitC <- struct{}{}
+			// Drain outC, to avoid blocking the scanner.
+			for _ = range outC {
+			}
 		}()
 		wg.Wait()
 	}()
@@ -85,7 +88,7 @@ func TitleLengthCount() (err error) {
 			count := 0
 			for qv := range outC {
 				if count%logStep == 0 {
-					log.Printf("*** Goroutine %v has counted %d questions.",
+					log.Printf("*** Goroutine %v has counted %d questions.\n",
 						number, count)
 				}
 				length := len(qv.TitleTokenVectors)

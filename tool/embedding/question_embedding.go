@@ -1,7 +1,6 @@
 package embedding
 
 import (
-	"errors"
 	"log"
 	"reflect"
 	"sync"
@@ -16,8 +15,6 @@ import (
 	"github.com/donyori/cqa/data/model"
 	"github.com/donyori/cqa/nlp"
 )
-
-var ErrCannotGetMeta error = errors.New("cannot get crawler meta")
 
 func QuestionEmbedding() (err error) {
 	goroutineNumber := GlobalSettings.GoroutineNumber
@@ -185,7 +182,7 @@ func QuestionEmbedding() (err error) {
 			count := 0
 			for question := range outC {
 				if count%logStep == 0 {
-					log.Printf("*** Goroutine %v has embedded %d questions.",
+					log.Printf("*** Goroutine %v has embedded %d questions.\n",
 						number, count)
 				}
 				if skipEmbeddedQuestions {
@@ -233,6 +230,9 @@ func QuestionEmbedding() (err error) {
 	}
 	wg.Wait()
 	close(writeMetaC)
+	// Drain outC, to avoid blocking the scanner.
+	for _ = range outC {
+	}
 	err = <-resC
 	<-writeMetaDoneC
 	if err != nil {

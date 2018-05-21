@@ -1,6 +1,7 @@
 package embedding
 
 import (
+	"errors"
 	"time"
 
 	"github.com/donyori/cqa/data/model"
@@ -17,6 +18,8 @@ type Meta struct {
 }
 
 const MetaKey string = "embedding"
+
+var ErrCannotGetMeta error = errors.New("cannot get crawler meta")
 
 func NewMetaValue() *MetaValue {
 	return new(MetaValue)

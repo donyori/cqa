@@ -78,7 +78,8 @@ func ClassifyByTag() (err error) {
 			count := 0
 			for question := range outC {
 				if count%logStep == 0 {
-					log.Printf("*** Goroutine %v has classified %d questions.",
+					log.Printf(
+						"*** Goroutine %v has classified %d questions.\n",
 						number, count)
 				}
 				labels := qc.GetLabelStringsByTags(question.Tags)
@@ -103,6 +104,9 @@ func ClassifyByTag() (err error) {
 	}
 	wg.Wait()
 	quitC <- struct{}{}
+	// Drain outC, to avoid blocking the question scanner.
+	for _ = range outC {
+	}
 	err = <-resC
 	if err != nil {
 		return err

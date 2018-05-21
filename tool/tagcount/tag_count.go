@@ -67,6 +67,9 @@ func TagCount() (err error) {
 		defer close(countC)
 		defer func() {
 			quitC <- struct{}{}
+			// Drain outC, to avoid blocking the question scanner.
+			for _ = range outC {
+			}
 		}()
 		wg.Wait()
 	}()
@@ -83,7 +86,7 @@ func TagCount() (err error) {
 			count := 0
 			for q := range outC {
 				if count%logStep == 0 {
-					log.Printf("*** Goroutine %v has counted %d questions.",
+					log.Printf("*** Goroutine %v has counted %d questions.\n",
 						number, count)
 				}
 				for _, tag := range q.Tags {
