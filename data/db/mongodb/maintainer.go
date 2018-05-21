@@ -112,6 +112,27 @@ func (mm *Maintainer) EnsureIndexes(cid id.CollectionId,
 		if err != nil {
 			return err
 		}
+
+	case id.QuestionClassificationCollection:
+		cByTagIndex := mgo.Index{
+			Key:        []string{"classification_by_tag"},
+			Sparse:     true,
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(cByTagIndex)
+		if err != nil {
+			return err
+		}
+
+		cByNnIndex := mgo.Index{
+			Key:        []string{"classification_by_nn"},
+			Sparse:     true,
+			Background: isBackground,
+		}
+		err = c.EnsureIndex(cByNnIndex)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -121,7 +142,9 @@ func (mm *Maintainer) EnsureDataTypes(cid id.CollectionId) error {
 	if mm == nil {
 		return ErrNilMaintainer
 	}
-	if cid != id.QuestionCollection && cid != id.QuestionVectorCollection {
+	if cid != id.QuestionCollection &&
+		cid != id.QuestionVectorCollection &&
+		cid != id.QuestionClassificationCollection {
 		return nil
 	}
 	session := mm.GetSession()
