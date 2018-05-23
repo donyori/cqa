@@ -243,6 +243,8 @@ func selectQuestionsByEpl(name string, epl *ExampleNumbersPerLabelPair,
 	qcChan <-chan *model.QuestionClassification, quitChan <-chan struct{},
 	doneChan chan<- string) (
 	trainIds []model.Id, evalIds []model.Id, err error) {
+	doesContainNoLabelQuestions := GlobalSettings.DoesContainNoLabelQuestions
+	logStep := GlobalSettings.LogStep
 	defer func() {
 		if panicErr := recover(); panicErr != nil {
 			e, ok := panicErr.(error)
@@ -263,7 +265,6 @@ func selectQuestionsByEpl(name string, epl *ExampleNumbersPerLabelPair,
 		for _ = range qcChan {
 		}
 	}()
-	logStep := GlobalSettings.LogStep
 	trainEpl := epl.TrainDataset
 	evalEpl := epl.EvalDataset
 	ter := float64(trainEpl) / float64(evalEpl)
@@ -293,7 +294,7 @@ func selectQuestionsByEpl(name string, epl *ExampleNumbersPerLabelPair,
 			}
 			count++
 			if qcm == nil {
-				continue
+				break
 			}
 			labels := labelsBase[:0]
 			for _, labelStr := range qcm.ClassificationByTag {
@@ -304,6 +305,9 @@ func selectQuestionsByEpl(name string, epl *ExampleNumbersPerLabelPair,
 				labels = append(labels, label)
 			}
 			if len(labels) == 0 {
+				if !doesContainNoLabelQuestions {
+					break
+				}
 				labels = append(labels, qc.UnknownLabel)
 			}
 			var af addFlag
