@@ -178,8 +178,12 @@ func SelectQuestions() (err error) {
 			var qcm *model.QuestionClassification
 			qcm, err = qca.FetchOne(params)
 			if err != nil {
-				close(quitC)
-				quitC = nil
+				log.Println(
+					"*** Cannot fetch data from QuestionClassification collection.")
+				if quitC != nil {
+					close(quitC)
+					quitC = nil
+				}
 				break
 			}
 			for _, qcChan := range qcChans {
@@ -269,7 +273,10 @@ func selectQuestionsByEpl(name string, epl *ExampleNumbersPerLabelPair,
 	evalEpl := epl.EvalDataset
 	ter := float64(trainEpl) / float64(evalEpl)
 
-	labelNum := int32(len(qc.KnownLabels) + 1) // +1 for no label questions.
+	labelNum := int32(len(qc.KnownLabels))
+	if doesContainNoLabelQuestions {
+		labelNum++ // +1 for no label questions.
+	}
 	trainCounts := make(map[qc.Label]int32)
 	evalCounts := make(map[qc.Label]int32)
 	var enoughTrainCounts, enoughEvalCounts int32
